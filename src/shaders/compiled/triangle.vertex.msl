@@ -1,0 +1,44 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct vertex_info
+{
+    float3 position;
+    float3 color;
+};
+
+struct vertex_to_pixel
+{
+    float4 position;
+    float3 color;
+};
+
+struct vertex_main_out
+{
+    float3 out_var_COLOR [[user(locn0)]];
+    float4 gl_Position [[position]];
+};
+
+struct vertex_main_in
+{
+    float3 in_var_POSITION [[attribute(0)]];
+    float3 in_var_COLOR [[attribute(1)]];
+};
+
+vertex vertex_main_out vertex_main(vertex_main_in in [[stage_in]])
+{
+    vertex_main_out out = {};
+    float3 _27 = in.in_var_POSITION;
+    float3 _26 = in.in_var_COLOR;
+    float4 _38 = float4(in.in_var_POSITION, 1.0);
+    float4 _31 = _38;
+    float3 _30 = in.in_var_COLOR;
+    float4 _29 = _38;
+    float3 _28 = in.in_var_COLOR;
+    out.gl_Position = _38;
+    out.out_var_COLOR = in.in_var_COLOR;
+    return out;
+}
+
