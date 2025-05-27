@@ -1,33 +1,29 @@
 // Vertex shader
-struct vertex_info
+struct Input
 {
-    float3 position : POSITION;
-    float3 color : COLOR;
+    float3 Position : TEXCOORD0;
+    float3 TexCoord : TEXCOORD1;
 };
 
-struct vertex_to_pixel
+struct Output
 {
-    float4 position : SV_POSITION;
-    float3 color : COLOR;
+    float3 TexCoord : TEXCOORD0;
+    float4 Position : SV_Position;
 };
 
-vertex_to_pixel vertex_main(in vertex_info IN)
+Output vertex_main(Input input)
 {
-    vertex_to_pixel OUT;
-
-    OUT.position = float4(IN.position, 1.0);
-    OUT.color = IN.color;
-
-    return OUT;
+    Output output;
+    output.TexCoord = input.TexCoord;
+    output.Position = float4(input.Position, 1.0f);
+    return output;
 }
 
 // Fragment shader
-struct input_from_vertex
-{
-    float3 color : COLOR;
-};
+Texture2D<float4> Texture : register(t0, space0);
+SamplerState Sampler : register(s0, space0);
 
-float4 fragment_main(in input_from_vertex IN) : SV_TARGET0
+float4 fragment_main(float3 TexCoord : TEXCOORD0) : SV_Target0
 {
-    return float4(IN.color, 1.0);
+    return Texture.Sample(Sampler, TexCoord.xy);
 }
