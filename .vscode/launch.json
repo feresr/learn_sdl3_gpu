@@ -8,58 +8,13 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'common'",
+            "name": "Cargo launch",
             "cargo": {
                 "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=common"
-                ],
-                "filter": {
-                    "name": "common",
-                    "kind": "lib"
-                }
+                    "build"
+                ]
             },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'sdl3_gpu'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=sdl3_gpu",
-                    "--package=sdl3_gpu"
-                ],
-                "filter": {
-                    "name": "sdl3_gpu",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'sdl3_gpu'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=sdl3_gpu",
-                    "--package=sdl3_gpu"
-                ],
-                "filter": {
-                    "name": "sdl3_gpu",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "args": []
         }
     ]
 }

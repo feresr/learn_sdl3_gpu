@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use crate::game_dll::GameDll;
 use crate::graphics::batch::Batch;
 use crate::graphics::material::Material;
+use crate::graphics::texture::Texture;
 
 pub const FPS: u64 = 60;
 pub const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / FPS);
@@ -40,12 +41,24 @@ fn main() {
 
     let mut batch = Batch::new(device.clone(), Material::default(device.clone(), &window));
 
-    batch.triangle(
-        [-1.0f32, -1.0f32, 0.0],
-        [1.0f32, -1.0f32, 0.0f32],
-        [0.0f32, 1.0f32, 0.0f32],
-        [0, 255, 255, 255],
+    batch.quad(
+        [-0.9f32, -0.9f32, 0.0f32],
+        [0.9f32, -0.9f32, 0.0f32],
+        [-0.9f32, 0.9f32, 0.0f32],
+        [0.9f32, 0.9f32, 0.0f32],
+        [255, 255, 255, 255],
     );
+    batch.circle([0.0f32, 0.0f32], 0.1f32, 24, [0, 0, 0, 255]);
+    batch.circle([1.0f32, 1.0f32], 0.1f32, 24, [255, 255, 0, 255]);
+
+    // batch.texture(t, glm::vec2(0.0f32, 0.0f32));
+
+    // batch.triangle(
+    //     [-1.0f32, -1.0f32, 0.0f32],
+    //     [1.0f32, -1.0f32, 0.0f32],
+    //     [0.0f32, 1.0f32, 0.0f32],
+    //     [0, 255, 255, 255],
+    // );
 
     let mut game_memory = GameMemory::default();
     let mut gamedll = GameDll::load();

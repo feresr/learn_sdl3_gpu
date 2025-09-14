@@ -1,6 +1,7 @@
 pub mod batch;
 pub mod material;
 pub mod mesh;
+pub mod texture;
 
 #[repr(C)]
 #[derive(Clone, Copy)]

@@ -6,7 +6,13 @@ name = "sdl3_gpu"
 version = "0.1.0"
 edition = "2024"
 
+[workspace.dependencies]
+sdl3 = "0.15.1"
+glm = "0.3.0"
+stb_image = "0.3.0"
+
 [dependencies]
 common = { path = "./common" }
-sdl3 = "0.14.42"
-glm = "0.3.0"
+sdl3 = { workspace = true } 
+glm = { workspace = true } 
+stb_image = { workspace = true }

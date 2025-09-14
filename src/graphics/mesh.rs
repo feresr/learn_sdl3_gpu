@@ -1,6 +1,7 @@
+use std::any::Any;
+
 use sdl3::gpu::{
-    Buffer, BufferRegion, BufferUsageFlags, Device, TransferBuffer, TransferBufferLocation,
-    TransferBufferUsage,
+    Buffer, BufferRegion, BufferUsageFlags, CopyPass, Device, TransferBuffer, TransferBufferLocation, TransferBufferUsage
 };
 
 use crate::graphics::{Vertex, MAX_INDICES, MAX_VERTICES};
@@ -69,9 +70,7 @@ impl Mesh {
         map.unmap();
     }
 
-    pub fn upload(&mut self) {
-        let upload_cmd = self.device.acquire_command_buffer().unwrap();
-        let copy_pass = self.device.begin_copy_pass(&upload_cmd).unwrap();
+    pub fn upload(&mut self, copy_pass : &CopyPass) {
 
         // Upload vertices
         copy_pass.upload_to_gpu_buffer(
@@ -94,7 +93,5 @@ impl Mesh {
             false,
         );
 
-        self.device.end_copy_pass(copy_pass);
-        upload_cmd.submit().unwrap();
     }
 }

@@ -36,6 +36,7 @@ impl Material {
 
         let fs = device
             .create_shader()
+            .with_samplers(1)
             .with_code(shader_format, fs.as_bytes(), ShaderStage::Fragment)
             .with_entrypoint(fs_entry.as_c_str())
             .build()
