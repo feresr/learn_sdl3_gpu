@@ -1,7 +1,12 @@
+[workspace]
+members=["game", "common"]
+
 [package]
 name = "sdl3_gpu"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sdl3 = "0.14.27"
+common = { path = "./common" }
+sdl3 = "0.14.42"
+glm = "0.3.0"

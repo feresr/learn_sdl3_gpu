@@ -1,33 +1,47 @@
-// Vertex shader
-struct vertex_info
+// Space[0,1,2] allocation follows https://wiki.libsdl.org/SDL3/SDL_CreateGPUShader
+// Texture2D Texture : register(t0, space2);
+// SamplerState Sampler : register(s0, space2);
+
+// cbuffer UniformBlock : register(b0, space1)
+// {
+//     float4x4 Matrix;
+// };
+
+struct VsInput
 {
-    float3 position : POSITION;
-    float3 color : COLOR;
+    float3 Position : TEXCOORD0;
+    float4 Color : TEXCOORD1;
+    float2 TexCoord : TEXCOORD2;
+    float4 mult_wash_fill_pad : TEXCOORD3;
 };
 
-struct vertex_to_pixel
+struct VsOutput
 {
-    float4 position : SV_POSITION;
-    float3 color : COLOR;
+    float2 TexCoord : TEXCOORD0;
+    float4 Color : TEXCOORD1;
+    float4 Position : SV_Position;
+    float4 mult_wash_fill_pad : TEXCOORD3;
 };
 
-vertex_to_pixel vertex_main(in vertex_info IN)
+VsOutput vertex_main(VsInput input)
 {
-    vertex_to_pixel OUT;
-
-    OUT.position = float4(IN.position, 1.0);
-    OUT.color = IN.color;
-
-    return OUT;
+    VsOutput output;
+    output.TexCoord = input.TexCoord;
+    output.Color = input.Color;
+    // output.Position = float4(input.Position, 1.0);
+    output.Position = float4(input.Position, 1.0); // mul(Matrix, float4(input.Position, 1.0));
+    output.mult_wash_fill_pad = input.mult_wash_fill_pad;
+    return output;
 }
 
-// Fragment shader
-struct input_from_vertex
+float4 fragment_main(VsOutput input) : SV_Target0
 {
-    float3 color : COLOR;
-};
-
-float4 fragment_main(in input_from_vertex IN) : SV_TARGET0
-{
-    return float4(IN.color, 1.0);
+    float4 texture = float4(1.0, 1.0, 1.0, 1.0); //Texture.Sample(Sampler, input.TexCoord);
+    float4 color = input.Color;
+    float mult = input.mult_wash_fill_pad.x;
+    float wash = input.mult_wash_fill_pad.y;
+    float fill = input.mult_wash_fill_pad.z;
+    // return mult * texture * color + wash * texture.a * color + fill * color;
+    float4 output = mult * texture * color + wash * texture.a * color + fill * color;
+    return float4(output.xyz, 1.0);
 }
