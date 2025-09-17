@@ -11,6 +11,7 @@ use std::fs;
 
 use crate::graphics::Vertex;
 
+#[derive(Clone)]
 pub struct Material {
     pub pipeline: GraphicsPipeline,
     pub target_texture_format: TextureFormat,
@@ -34,24 +35,25 @@ impl Material {
         let fs_entry = CString::new("fragment_main").unwrap();
         let vs_entry = CString::new("vertex_main").unwrap();
 
-        let fs = device
+        let fs: Shader = device
             .create_shader()
-            .with_samplers(1)
+            .with_samplers(1) // Texture
             .with_code(shader_format, fs.as_bytes(), ShaderStage::Fragment)
             .with_entrypoint(fs_entry.as_c_str())
             .build()
             .expect("Unable to create fragment shader");
 
-        let vs = device
+        let vs: Shader = device
             .create_shader()
+            .with_uniform_buffers(1) // Projection Matrix
             .with_code(shader_format, vs.as_bytes(), ShaderStage::Vertex)
             .with_entrypoint(vs_entry.as_c_str())
             .build()
             .expect("Unable to create vertex shader");
 
-        let format = device.get_swapchain_texture_format(&window);
+        let texture_format = device.get_swapchain_texture_format(&window);
 
-        return Self::new(device, vs, fs, format);
+        return Self::new(device, vs, fs, texture_format);
     }
 
     pub fn new(
@@ -112,5 +114,4 @@ impl Material {
             target_texture_format: target_texture_format,
         };
     }
-    
 }

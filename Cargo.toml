@@ -8,11 +8,11 @@ edition = "2024"
 
 [workspace.dependencies]
 sdl3 = "0.15.1"
-glm = "0.3.0"
+nalgebra-glm = "0.20.0"
 stb_image = "0.3.0"
 
 [dependencies]
 common = { path = "./common" }
 sdl3 = { workspace = true } 
-glm = { workspace = true } 
 stb_image = { workspace = true }
+nalgebra-glm = {workspace = true} 

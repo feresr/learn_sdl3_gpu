@@ -1,21 +1,41 @@
-use std::{path::Path, rc::Rc};
+use std::path::Path;
 
 use sdl3::gpu::{
     self, CopyPass, Device, Sampler, SamplerCreateInfo, TextureCreateInfo, TextureFormat,
     TextureRegion, TextureSamplerBinding, TextureTransferInfo, TransferBuffer,
 };
 
+static mut NEXT_ID: u32 = 0;
+
+
+// TODO: is cloning textures the best approach?
+// Adding a texture manager would be better?
+// A drawbach has owns Texture, inner_texture has a Arc so: cloning should be cheap,
+// the texture will drop when nothing is using it.
+/**
+ * Wraps around a Texture + Sampler. 
+ * Both of these are Rc so this struct can be copied freely.
+ */
+#[derive(Clone)]
 pub struct Texture {
+    pub id : u32,
     pub width: i32,
     pub height: i32,
     pub format: TextureFormat,
     inner_texture: sdl3::gpu::Texture<'static>,
     inner_sampler: Sampler,
     transfer_buffer: TransferBuffer,
-    uploaded: bool,
+    uploaded: bool, // TODO: rename to needs_upload
+}
+
+impl PartialEq for Texture {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
 }
 
 impl Texture {
+
     pub fn from_path<P: AsRef<Path>>(device: Device, path: P) -> Self {
         let load_result = stb_image::image::load(path);
 
@@ -25,7 +45,7 @@ impl Texture {
             stb_image::image::LoadResult::ImageF32(image) => panic!("Only u8 images are supported"),
         };
 
-        let texture = Texture::new(
+        let mut texture = Texture::new(
             device.clone(),
             image.width as i32,
             image.height as i32,
@@ -33,6 +53,7 @@ impl Texture {
             TextureFormat::R8g8b8a8Unorm,
         );
 
+        texture.uploaded = false;
         let mut map = texture.transfer_buffer.map(&device, true);
         let memory = map.mem_mut();
         memory[..image.data.len()].copy_from_slice(&image.data);
@@ -65,7 +86,7 @@ impl Texture {
         );
     }
 
-    fn new(device: Device, width: i32, height: i32, texture_format: TextureFormat) -> Self {
+    pub fn new(device: Device, width: i32, height: i32, texture_format: TextureFormat) -> Self {
         let texture = device
             .create_texture(
                 TextureCreateInfo::new()
@@ -102,15 +123,26 @@ impl Texture {
             .build()
             .expect("Could not build transfer buffer");
 
+        let id = unsafe {
+            let id = NEXT_ID;
+            NEXT_ID += 1;
+            id
+        };
+
         return Texture {
+            id,
             width,
             height,
             format: texture_format,
             inner_texture: texture,
             inner_sampler: sampler,
             transfer_buffer: transfer_buffer,
-            uploaded: false,
+            uploaded: true, // Offscreen render_targets don't need to be 'uploaded'
         };
+    }
+
+    pub fn inner(&self) -> &sdl3::gpu::Texture<'static> {
+        &self.inner_texture
     }
 
     pub fn bindings(&self) -> TextureSamplerBinding {

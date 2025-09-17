@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use sdl3::gpu::{
     Buffer, BufferRegion, BufferUsageFlags, CopyPass, Device, TransferBuffer, TransferBufferLocation, TransferBufferUsage
 };

@@ -40,5 +40,6 @@ float4 fragment_main(VsOutput input) : SV_Target0
     float mult = input.mult_wash_fill_pad.x;
     float wash = input.mult_wash_fill_pad.y;
     float fill = input.mult_wash_fill_pad.z;
-    return mult * texture * color + wash * texture.a * color + fill * color;
+    float4 output =  mult * texture * color + wash * texture.a * color + fill * color;
+    return float4(output.xyz, 1.0);
 }

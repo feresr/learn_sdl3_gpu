@@ -1,40 +1,82 @@
-use std::cell::RefCell;
 use std::f32::consts::TAU;
-use std::rc::Rc;
+use std::fmt::Debug;
 
-use sdl3::gpu::{BufferBinding, ColorTargetInfo, Device};
-use sdl3::render;
+use sdl3::gpu::{BufferBinding, Device};
 
-use crate::graphics::Vertex;
+use crate::graphics::{Vertex, IDENTITY};
 use crate::graphics::material::Material;
 use crate::graphics::mesh::Mesh;
+use crate::graphics::render_target::RenderTarget;
 use crate::graphics::texture::Texture;
+
 
 pub struct Batch {
     device: Device,
     mesh: Mesh,
-    material: Material,
+    default_material: Material,
+    // TODO: All these Vec will allocate dynamically repace with array or pre-allocate them?
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
+    matrix_stack: Vec<glm::Mat4>,
+    // TODO: material_stack : Vec<Material>,
     batches: Vec<DrawBatch>,
-    texture: Rc<RefCell<Texture>>,
+}
+
+impl Debug for Batch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Batch")
+            .field("vertices", &self.vertices.len())
+            .field("indices", &self.indices)
+            .field("batch count:", &self.batches.len())
+            .finish()
+    }
 }
 
 impl Batch {
     pub fn new(device: Device, default_material: Material) -> Self {
-        let texture = Texture::from_path(
-            device.clone(),
-            "/Users/feresr/Workspace/learn_sdl3_gpu/src/atlas.png",
-        );
         Batch {
             device: device.clone(),
             mesh: Mesh::new(device),
-            material: default_material,
+            default_material: default_material,
             vertices: Default::default(),
             indices: Default::default(),
+            matrix_stack: Default::default(),
+            // material_stack: Default::default(),
             batches: Default::default(),
-            texture: Rc::new(RefCell::new(texture)),
         }
+    }
+
+    pub fn push_matrix(&mut self, matrix: glm::Mat4) {
+        if self.matrix_stack.is_empty() {
+            self.matrix_stack.push(matrix);
+        } else {
+            let current: &glm::Mat4 = self.matrix_stack.last().unwrap();
+            self.matrix_stack.push(current * matrix);
+        }
+    }
+
+    pub fn peek_matrix(&self) -> &glm::Mat4 {
+        if self.matrix_stack.is_empty() {
+            return &IDENTITY;
+        } else {
+            return &self.matrix_stack.last().unwrap();
+        }
+    }
+
+    pub fn pop_matrix(&mut self) {
+        self.matrix_stack.pop();
+    }
+
+    fn push_batch(&mut self) {
+        let current = self.current_batch();
+        let value = DrawBatch {
+            offset: current.offset + current.elements,
+            elements: 0,
+            material: current.material.clone(),
+            texture: current.texture.clone(),
+            ..*current
+        };
+        self.batches.push(value);
     }
 
     pub fn triangle(
@@ -58,14 +100,26 @@ impl Batch {
     }
 
     pub fn texture(&mut self, texture: Texture, position: glm::Vec2) {
-        // TODO: Hardcoded + 1.0f32 should be texture width and height
-        // (add projection matrix to the shader!)
+        let mut current_batch = self.current_batch();
+        match current_batch.texture.as_ref() {
+            Some(batch_texture) => {
+                if batch_texture != &texture {
+                    self.push_batch();
+                    current_batch = self.current_batch();
+                }
+                current_batch.texture = Some(texture.clone())
+            }
+            None => {
+                current_batch.texture = Some(texture.clone());
+            }
+        }
+
         let position0 = [position.x, position.y, 0.0f32];
-        let position1 = [position.x + 1.0f32, position.y, 0.0f32];
-        let position2 = [position.x, position.y + 1.0f32, 0.0f32];
+        let position1 = [position.x + texture.width as f32, position.y, 0.0f32];
+        let position2 = [position.x, position.y + texture.height as f32, 0.0f32];
         let position3 = [
-            position.x + 0.8f32, //texture.width as f32,
-            position.y + 0.8f32, // texture.height as f32,
+            position.x + texture.width as f32,
+            position.y + texture.height as f32,
             0.0f32,
         ];
 
@@ -107,59 +161,69 @@ impl Batch {
         }
     }
 
-    pub fn draw(&mut self, target: ColorTargetInfo) {
-        self.mesh.set_data(&self.vertices);
-        self.mesh.set_indices(&self.indices);
+    pub fn draw(&mut self, render_target: &RenderTarget) {
+        println!("{:#?}", self);
 
         // Copy pass
+        {
+            let upload_cmd = self.device.acquire_command_buffer().unwrap();
+            let copy_pass = self.device.begin_copy_pass(&upload_cmd).unwrap();
+            for batch in &mut self.batches {
+                if let Some(texture) = batch.texture.as_mut() {
+                    texture.upload(&copy_pass);
+                }
+            }
 
-        let upload_cmd = self.device.acquire_command_buffer().unwrap();
-        let copy_pass = self.device.begin_copy_pass(&upload_cmd).unwrap();
+            self.mesh.set_data(&self.vertices);
+            self.mesh.set_indices(&self.indices);
+            self.mesh.upload(&copy_pass);
 
-        self.texture.borrow_mut().upload(&copy_pass);
-        self.mesh.upload(&copy_pass);
-
-        self.device.end_copy_pass(copy_pass);
-        upload_cmd.submit().unwrap();
-
-        let cmd = self.device.acquire_command_buffer().unwrap();
-
-        let render_pass = self
-            .device
-            .begin_render_pass(&cmd, &[target], None)
-            .unwrap();
-
-        render_pass.bind_graphics_pipeline(&self.material.pipeline);
-
-        let buffer_binding = BufferBinding::new()
-            .with_offset(0)
-            .with_buffer(&self.mesh.vertex_buffer);
-        let index_binding = BufferBinding::new()
-            .with_offset(0)
-            .with_buffer(&self.mesh.index_buffer);
-
-        render_pass.bind_vertex_buffers(0, &[buffer_binding]);
-        render_pass.bind_index_buffer(
-            &index_binding,
-            sdl3::sys::gpu::SDL_GPUIndexElementSize::_32BIT,
-        );
-
-        render_pass.bind_fragment_samplers(0, &[self.texture.borrow().bindings()]);
-
-        // TODO: update params
-        for batch in &self.batches {
-            render_pass.draw_indexed_primitives(
-                (batch.elements * 3) as u32,
-                1,
-                0,
-                batch.offset as i32,
-                0,
-            );
+            self.device.end_copy_pass(copy_pass);
+            upload_cmd.submit().unwrap();
         }
 
-        self.device.end_render_pass(render_pass);
+        // Render pass
+        {
+            let render_cmd = self.device.acquire_command_buffer().unwrap();
+            let render_pass = self
+                .device
+                .begin_render_pass(&render_cmd, &[render_target.color_target_info()], None)
+                .unwrap();
 
-        cmd.submit().unwrap();
+            let buffer_binding = BufferBinding::new()
+                .with_offset(0)
+                .with_buffer(&self.mesh.vertex_buffer);
+            let index_binding = BufferBinding::new()
+                .with_offset(0)
+                .with_buffer(&self.mesh.index_buffer);
+
+            render_cmd.push_vertex_uniform_data(0, render_target.projection());
+
+            render_pass.bind_vertex_buffers(0, &[buffer_binding]);
+            render_pass.bind_index_buffer(
+                &index_binding,
+                sdl3::sys::gpu::SDL_GPUIndexElementSize::_32BIT,
+            );
+
+            for batch in &self.batches {
+                if batch.texture.is_some() {
+                    // TODO do not use .unwrap()
+                    render_pass
+                        .bind_fragment_samplers(0, &[batch.texture.as_ref().unwrap().bindings()]);
+                }
+                render_pass.bind_graphics_pipeline(&batch.material.pipeline);
+                render_pass.draw_indexed_primitives(
+                    (batch.elements * 3) as u32,
+                    1,
+                    (batch.offset * 3) as u32,
+                    0,
+                    0,
+                );
+            }
+
+            self.device.end_render_pass(render_pass);
+            render_cmd.submit().unwrap();
+        }
     }
 
     fn push_quad(
@@ -201,6 +265,8 @@ impl Batch {
             let value = DrawBatch {
                 offset: 0,
                 elements: 0,
+                material: self.default_material.clone(),
+                texture: None,
             };
             self.batches.push(value);
         }
@@ -216,16 +282,33 @@ impl Batch {
         wash: u8,
         fill: u8,
     ) {
+        if self.matrix_stack.is_empty() {
+            self.matrix_stack.push(IDENTITY);
+        }
+        let matrix: &glm::Mat4 = self.matrix_stack.last().unwrap();
+        let projected: glm::Vec3 = (matrix * glm::vec4(
+            position[0], position[1], position[2], 1.0
+        )).xyz();
         self.vertices.push(Vertex {
-            position,
+            position: projected.into(),
             color,
             texture_uv,
             mult_wash_fill: [mult, wash, fill, 0],
         });
+    }
+
+    pub fn clear(&mut self) {
+        self.batches.clear();
+        self.vertices.clear();
+        self.indices.clear();
+        self.matrix_stack.clear();
+        // self.material_stack.clear();
     }
 }
 
 pub struct DrawBatch {
     offset: i64,
     elements: i64,
+    material: Material,
+    texture: Option<Texture>,
 }

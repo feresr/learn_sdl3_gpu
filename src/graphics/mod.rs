@@ -2,6 +2,7 @@ pub mod batch;
 pub mod material;
 pub mod mesh;
 pub mod texture;
+pub mod render_target;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -16,3 +17,6 @@ pub struct Vertex {
 
 pub const MAX_VERTICES: u32 = 65536;
 pub const MAX_INDICES: u32 = MAX_VERTICES * 3 / 2;
+pub static IDENTITY: glm::Mat4 = glm::Mat4::new(
+    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+);
