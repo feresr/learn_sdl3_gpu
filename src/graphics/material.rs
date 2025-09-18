@@ -6,16 +6,30 @@ use sdl3::{
     },
     video::Window,
 };
-use std::ffi::CString;
-use std::fs;
+use std::ffi::CStr;
 
 use crate::graphics::Vertex;
+
+static FS_ENTRY: &CStr = c"fragment_main";
+static VS_ENTRY: &CStr = c"vertex_main";
 
 #[derive(Clone)]
 pub struct Material {
     pub pipeline: GraphicsPipeline,
     pub target_texture_format: TextureFormat,
 }
+
+impl PartialEq for Material {
+    fn eq(&self, other: &Self) -> bool {
+        self.pipeline.raw() == other.pipeline.raw()
+            && self.target_texture_format == other.target_texture_format
+    }
+}
+
+// TODO: Rename default shader to default.hlsl
+static DEFAULT_SHADER_FRAGMENT_SRC: &str =
+    include_str!("../shaders/compiled/triangle.fragment.msl");
+static DEFAULT_SHADER_VERTEX_SRC: &str = include_str!("../shaders/compiled/triangle.vertex.msl");
 
 impl Material {
     pub fn default(device: Device, window: &Window) -> Self {
@@ -28,26 +42,27 @@ impl Material {
             panic!("Shader format not supported")
         }
 
-        // TODO: Use SDL to read string?
-        let vs = fs::read_to_string("src/shaders/compiled/triangle.vertex.msl").unwrap();
-        let fs = fs::read_to_string("src/shaders/compiled/triangle.fragment.msl").unwrap();
-
-        let fs_entry = CString::new("fragment_main").unwrap();
-        let vs_entry = CString::new("vertex_main").unwrap();
-
         let fs: Shader = device
             .create_shader()
             .with_samplers(1) // Texture
-            .with_code(shader_format, fs.as_bytes(), ShaderStage::Fragment)
-            .with_entrypoint(fs_entry.as_c_str())
+            .with_code(
+                shader_format,
+                DEFAULT_SHADER_FRAGMENT_SRC.as_bytes(),
+                ShaderStage::Fragment,
+            )
+            .with_entrypoint(FS_ENTRY)
             .build()
             .expect("Unable to create fragment shader");
 
         let vs: Shader = device
             .create_shader()
             .with_uniform_buffers(1) // Projection Matrix
-            .with_code(shader_format, vs.as_bytes(), ShaderStage::Vertex)
-            .with_entrypoint(vs_entry.as_c_str())
+            .with_code(
+                shader_format,
+                DEFAULT_SHADER_VERTEX_SRC.as_bytes(),
+                ShaderStage::Vertex,
+            )
+            .with_entrypoint(VS_ENTRY)
             .build()
             .expect("Unable to create vertex shader");
 
@@ -114,4 +129,54 @@ impl Material {
             target_texture_format: target_texture_format,
         };
     }
+
+    pub fn from_specification(device: Device, specification: &MaterialSpecification) -> Self {
+        let supported_formats_bitflag = device.get_shader_formats();
+        let shader_format;
+        if (supported_formats_bitflag & ShaderFormat::MSL) == ShaderFormat::MSL {
+            shader_format = ShaderFormat::MSL
+        } else {
+            panic!("Shader format not supported")
+        }
+
+        let fs: Shader = device
+            .create_shader()
+            .with_samplers(specification.fragment.sampler_count) // Texture
+            .with_uniform_buffers(specification.fragment.uniform_buffer_count)
+            .with_code(
+                shader_format,
+                specification.fragment.src.as_bytes(),
+                ShaderStage::Fragment,
+            )
+            .with_entrypoint(FS_ENTRY)
+            .build()
+            .expect("Unable to create fragment shader");
+
+        let vs: Shader = device
+            .create_shader()
+            .with_samplers(specification.vertex.sampler_count)
+            .with_uniform_buffers(specification.vertex.uniform_buffer_count) // Projection Matrix
+            .with_code(
+                shader_format,
+                specification.vertex.src.as_bytes(),
+                ShaderStage::Vertex,
+            )
+            .with_entrypoint(VS_ENTRY)
+            .build()
+            .expect("Unable to create vertex shader");
+
+        return Self::new(device, vs, fs, specification.texture_format);
+    }
+}
+
+pub struct ShaderSpecification {
+    pub src: &'static str,
+    pub uniform_buffer_count: u32,
+    pub sampler_count: u32,
+}
+
+pub struct MaterialSpecification {
+    pub fragment: ShaderSpecification,
+    pub vertex: ShaderSpecification,
+    pub texture_format: TextureFormat,
 }

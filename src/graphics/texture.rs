@@ -42,7 +42,7 @@ impl Texture {
         let image = match load_result {
             stb_image::image::LoadResult::Error(_) => panic!("Could not load image path"),
             stb_image::image::LoadResult::ImageU8(image) => image,
-            stb_image::image::LoadResult::ImageF32(image) => panic!("Only u8 images are supported"),
+            stb_image::image::LoadResult::ImageF32(_image) => panic!("Only u8 images are supported"),
         };
 
         let mut texture = Texture::new(

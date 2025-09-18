@@ -3,12 +3,11 @@ use std::fmt::Debug;
 
 use sdl3::gpu::{BufferBinding, Device};
 
-use crate::graphics::{Vertex, IDENTITY};
 use crate::graphics::material::Material;
 use crate::graphics::mesh::Mesh;
 use crate::graphics::render_target::RenderTarget;
 use crate::graphics::texture::Texture;
-
+use crate::graphics::{IDENTITY, Vertex};
 
 pub struct Batch {
     device: Device,
@@ -18,7 +17,7 @@ pub struct Batch {
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
     matrix_stack: Vec<glm::Mat4>,
-    // TODO: material_stack : Vec<Material>,
+    material_stack: Vec<Material>,
     batches: Vec<DrawBatch>,
 }
 
@@ -41,9 +40,29 @@ impl Batch {
             vertices: Default::default(),
             indices: Default::default(),
             matrix_stack: Default::default(),
-            // material_stack: Default::default(),
+            material_stack: Default::default(),
             batches: Default::default(),
         }
+    }
+
+    pub fn push_material(&mut self, material: &Material) {
+        let current_material = self.current_batch().material.clone();
+        self.material_stack.push(current_material);
+        let current: &mut DrawBatch = self.current_batch();
+        if current.elements > 0 && *material != current.material {
+            self.push_batch();
+        }
+        self.current_batch().material = material.clone();
+    }
+
+    pub fn pop_material(&mut self) -> Material {
+        let material = self.material_stack.pop().unwrap();
+        let current: &mut DrawBatch = self.current_batch();
+        if current.elements > 0 && material != current.material {
+            self.push_batch();
+        }
+        self.current_batch().material = material.clone();
+        return material;
     }
 
     pub fn push_matrix(&mut self, matrix: glm::Mat4) {
@@ -286,9 +305,8 @@ impl Batch {
             self.matrix_stack.push(IDENTITY);
         }
         let matrix: &glm::Mat4 = self.matrix_stack.last().unwrap();
-        let projected: glm::Vec3 = (matrix * glm::vec4(
-            position[0], position[1], position[2], 1.0
-        )).xyz();
+        let projected: glm::Vec3 =
+            (matrix * glm::vec4(position[0], position[1], position[2], 1.0)).xyz();
         self.vertices.push(Vertex {
             position: projected.into(),
             color,

@@ -1,5 +1,6 @@
 mod game_dll;
 mod graphics;
+mod materials;
 
 use common::game_memory::GameMemory;
 use sdl3::event::{Event, WindowEvent};
@@ -42,6 +43,8 @@ fn main() {
     .expect("Unable to create GPU device")
     .with_window(&window) // Attach to window
     .expect("Unable to attach GPU device to window");
+
+    let red_material = Material::from_specification(device.clone(), &materials::RED_MATERIAL);
 
     let mut batch = Batch::new(device.clone(), Material::default(device.clone(), &window));
     let dummy_texture = Texture::from_path(
@@ -107,7 +110,9 @@ fn main() {
         {
             gamedll.update(&mut game_memory);
             batch.texture(dummy_texture.clone(), glm::vec2(0.0f32, 0.0f32));
-            batch.circle([25.0f32, 90.0f32], 14.0f32, 54, [55, 0, 255, 255]);
+            batch.push_material(&red_material);
+            batch.circle([25.0f32, 90.0f32], 14.0f32, 54, [155, 255, 255, 255]);
+            batch.pop_material();
             batch.draw(&offscreen_target);
             batch.clear();
         }
