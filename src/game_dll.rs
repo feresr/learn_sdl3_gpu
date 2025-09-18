@@ -3,6 +3,8 @@ use sdl3::sys::{
     loadso::{SDL_LoadFunction, SDL_LoadObject, SDL_SharedObject, SDL_UnloadObject},
     stdinc::SDL_FunctionPointer,
 };
+
+use std::ffi::CStr;
 use std::ffi::CString;
 
 /* Loads the game dynamically, finds and exposes a reference to its update function */
@@ -11,15 +13,31 @@ pub struct GameDll {
     update: extern "C" fn(*mut GameMemory),
 }
 
+#[cfg(all(debug_assertions, target_os = "macos"))]
+const LIB_PATH: &CStr = c"target/debug/libgame.dylib";
+
+#[cfg(all(not(debug_assertions), target_os = "macos"))]
+const LIB_PATH: &CStr = c"target/release/libgame.dylib";
+
+#[cfg(all(debug_assertions, target_os = "windows"))]
+const LIB_PATH: &CStr = c"target/debug/game.dll";
+
+#[cfg(all(not(debug_assertions), target_os = "windows"))]
+const LIB_PATH: &CStr = c"target/release/game.dll";
+
+#[cfg(all(debug_assertions, target_os = "linux"))]
+const LIB_PATH: &CStr = c"target/debug/libgame.so";
+
+#[cfg(all(not(debug_assertions), target_os = "linux"))]
+const LIB_PATH: &CStr = c"target/release/libgame.so";
+
 impl GameDll {
     pub fn load() -> Self {
         let update: extern "C" fn(*mut GameMemory);
         let handle;
 
         unsafe {
-            // TODO: support dylib dll so
-            let lib_path = CString::new("target/debug/libgame.dylib").unwrap();
-            handle = SDL_LoadObject(lib_path.as_ptr());
+            handle = SDL_LoadObject(LIB_PATH.as_ptr());
             if handle.is_null() {
                 panic!("Failed to load DLL");
             }
