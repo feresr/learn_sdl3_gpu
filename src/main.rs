@@ -1,6 +1,8 @@
 mod game_dll;
 
 use common::game_memory::GameMemory;
+use common::input::keyboard::Keyboard;
+use common::input::mouse::Mouse;
 use sdl3::event::{Event, WindowEvent};
 use sdl3::gpu::ShaderFormat;
 use sdl3::keyboard::Keycode;
@@ -25,10 +27,13 @@ fn main() {
     let video_subsystem = sdl_context.video().expect("Unable to get video subsystem");
     let window = video_subsystem
         .window("Game", 320 * 4, 180 * 4)
+        .resizable()
         .build()
         .expect("Unable to create window");
 
     // Inputs
+    let mut keyboard = Keyboard::default();
+    let mut mouse = Mouse::default();
     let mut event_pump = sdl_context.event_pump().expect("Unable to get event pump");
 
     // GPU
@@ -48,16 +53,14 @@ fn main() {
 
     'running: loop {
         let start = Instant::now();
+        keyboard.clear_pressed();
         for event in event_pump.poll_iter() {
             match event {
                 Event::Window {
                     timestamp: _,
                     window_id: _,
                     win_event: WindowEvent::Resized(width, height),
-                } => {
-                    screen_target.resize(width, height);
-                    // TODO: handle updates in game
-                }
+                } =>  screen_target.resize(width, height),
                 Event::Quit { .. }
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
@@ -68,17 +71,35 @@ fn main() {
                     ..
                 } => {
                     // Hot-reload the game .dll
+                    println!("Game DLL reloaded");
                     gamedll = GameDll::load();
                 }
+                Event::KeyDown {
+                    keycode: Some(kc), ..
+                } => keyboard.press(kc.clone()),
+                Event::KeyUp {
+                    keycode: Some(kc), ..
+                } => keyboard.release(&kc),
+                Event::MouseButtonDown { mouse_btn, .. } => mouse.mouse_button_down(mouse_btn),
+                Event::MouseButtonUp { mouse_btn, .. } => mouse.mouse_button_up(mouse_btn),
+                Event::MouseMotion {
+                    x, y, xrel, yrel, ..
+                } => mouse.set_position(x, y, xrel, yrel),
                 _ => {}
             }
         }
-
         let mut cmd = device.acquire_command_buffer().unwrap();
         let texture = cmd.wait_and_acquire_swapchain_texture(&window).unwrap();
 
         screen_target.set_texture(texture);
-        gamedll.update(&mut game_memory, &mut batch, &screen_target, &device);
+        gamedll.update(
+            &mut game_memory,
+            &mut batch,
+            &screen_target,
+            &keyboard,
+            &mouse,
+            &device,
+        );
         screen_target.clear_texture();
 
         cmd.submit().unwrap();

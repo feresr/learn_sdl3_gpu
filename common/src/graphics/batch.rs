@@ -181,7 +181,7 @@ impl Batch {
     }
 
     pub fn draw_into(&mut self, target: &RenderTarget) {
-        println!("{:#?}", self);
+        // println!("{:#?}", self);
 
         // Copy pass
         {

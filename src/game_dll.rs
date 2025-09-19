@@ -1,8 +1,11 @@
 use common::{
     Device,
-    api::Api,
     game_memory::GameMemory,
     graphics::{batch::Batch, render_target::RenderTarget},
+    input::{
+        keyboard::Keyboard,
+        mouse::Mouse,
+    },
 };
 use sdl3::sys::{
     loadso::{SDL_LoadFunction, SDL_LoadObject, SDL_SharedObject, SDL_UnloadObject},
@@ -10,9 +13,9 @@ use sdl3::sys::{
 };
 
 use std::ffi::CStr;
-use std::ffi::CString;
 
-type UpdateFn = extern "C" fn(*mut GameMemory, &mut Batch, &RenderTarget, &Device);
+type UpdateFn =
+    extern "C" fn(&mut GameMemory, &mut Batch, &RenderTarget, &Keyboard, &Mouse, &Device);
 
 /* Loads the game dynamically, finds and exposes a reference to its update function */
 pub struct GameDll {
@@ -66,10 +69,11 @@ impl GameDll {
         game_memory: &mut GameMemory,
         batch: &mut Batch,
         screen_target: &RenderTarget,
+        keyboard: &Keyboard,
+        mouse: &Mouse,
         device: &Device,
     ) {
-        let ptr: *mut GameMemory = game_memory;
-        (self.update)(ptr, batch, screen_target, device);
+        (self.update)(game_memory, batch, screen_target, keyboard, mouse, device);
     }
 }
 
