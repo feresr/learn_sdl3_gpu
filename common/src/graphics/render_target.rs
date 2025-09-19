@@ -115,9 +115,9 @@ impl RenderTarget {
         // TODO remove clear_color separation beween screen and back_buffers?
         let clear_color = match &self.texture {
             BackingTexture::Screen(_) => Color {
-                r: 255,
-                g: 0,
-                b: 0,
+                r: 25,
+                g: 25,
+                b: 25,
                 a: 255,
             }, // Red for screen
             BackingTexture::Texture(_) => Color {

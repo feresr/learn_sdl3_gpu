@@ -180,7 +180,7 @@ impl Batch {
         }
     }
 
-    pub fn draw(&mut self, render_target: &RenderTarget) {
+    pub fn draw_into(&mut self, target: &RenderTarget) {
         println!("{:#?}", self);
 
         // Copy pass
@@ -206,7 +206,7 @@ impl Batch {
             let render_cmd = self.device.acquire_command_buffer().unwrap();
             let render_pass = self
                 .device
-                .begin_render_pass(&render_cmd, &[render_target.color_target_info()], None)
+                .begin_render_pass(&render_cmd, &[target.color_target_info()], None)
                 .unwrap();
 
             let buffer_binding = BufferBinding::new()
@@ -216,7 +216,7 @@ impl Batch {
                 .with_offset(0)
                 .with_buffer(&self.mesh.index_buffer);
 
-            render_cmd.push_vertex_uniform_data(0, render_target.projection());
+            render_cmd.push_vertex_uniform_data(0, target.projection());
 
             render_pass.bind_vertex_buffers(0, &[buffer_binding]);
             render_pass.bind_index_buffer(

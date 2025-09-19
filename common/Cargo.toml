@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 sdl3 = { workspace = true } 
+nalgebra-glm = {workspace = true} 
+stb_image = { workspace = true }

@@ -7,18 +7,17 @@ use sdl3::gpu::{
 
 static mut NEXT_ID: u32 = 0;
 
-
 // TODO: is cloning textures the best approach?
 // Adding a texture manager would be better?
 // A drawbach has owns Texture, inner_texture has a Arc so: cloning should be cheap,
 // the texture will drop when nothing is using it.
 /**
- * Wraps around a Texture + Sampler. 
+ * Wraps around a Texture + Sampler.
  * Both of these are Rc so this struct can be copied freely.
  */
 #[derive(Clone)]
 pub struct Texture {
-    pub id : u32,
+    pub id: u32,
     pub width: i32,
     pub height: i32,
     pub format: TextureFormat,
@@ -35,6 +34,33 @@ impl PartialEq for Texture {
 }
 
 impl Texture {
+    pub fn from_bytes(device: Device, bytes: &[u8]) -> Self {
+        let load_result = stb_image::image::load_from_memory(bytes);
+
+        let image = match load_result {
+            stb_image::image::LoadResult::Error(_) => panic!("Could not load image path"),
+            stb_image::image::LoadResult::ImageU8(image) => image,
+            stb_image::image::LoadResult::ImageF32(_image) => {
+                panic!("Only u8 images are supported")
+            }
+        };
+
+        let mut texture = Texture::new(
+            device.clone(),
+            image.width as i32,
+            image.height as i32,
+            // TextureFormat::B8g8r8a8Unorm, // TODO
+            TextureFormat::R8g8b8a8Unorm,
+        );
+
+        texture.uploaded = false;
+        let mut map = texture.transfer_buffer.map(&device, true);
+        let memory = map.mem_mut();
+        memory[..image.data.len()].copy_from_slice(&image.data);
+        map.unmap();
+
+        return texture;
+    }
 
     pub fn from_path<P: AsRef<Path>>(device: Device, path: P) -> Self {
         let load_result = stb_image::image::load(path);
@@ -42,7 +68,9 @@ impl Texture {
         let image = match load_result {
             stb_image::image::LoadResult::Error(_) => panic!("Could not load image path"),
             stb_image::image::LoadResult::ImageU8(image) => image,
-            stb_image::image::LoadResult::ImageF32(_image) => panic!("Only u8 images are supported"),
+            stb_image::image::LoadResult::ImageF32(_image) => {
+                panic!("Only u8 images are supported")
+            }
         };
 
         let mut texture = Texture::new(

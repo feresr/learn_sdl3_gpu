@@ -1,4 +1,9 @@
-use common::game_memory::GameMemory;
+use common::{
+    Device,
+    api::Api,
+    game_memory::GameMemory,
+    graphics::{batch::Batch, render_target::RenderTarget},
+};
 use sdl3::sys::{
     loadso::{SDL_LoadFunction, SDL_LoadObject, SDL_SharedObject, SDL_UnloadObject},
     stdinc::SDL_FunctionPointer,
@@ -7,10 +12,12 @@ use sdl3::sys::{
 use std::ffi::CStr;
 use std::ffi::CString;
 
+type UpdateFn = extern "C" fn(*mut GameMemory, &mut Batch, &RenderTarget, &Device);
+
 /* Loads the game dynamically, finds and exposes a reference to its update function */
 pub struct GameDll {
     handle: *mut SDL_SharedObject,
-    update: extern "C" fn(*mut GameMemory),
+    update: UpdateFn,
 }
 
 #[cfg(all(debug_assertions, target_os = "macos"))]
@@ -31,9 +38,11 @@ const LIB_PATH: &CStr = c"target/debug/libgame.so";
 #[cfg(all(not(debug_assertions), target_os = "linux"))]
 const LIB_PATH: &CStr = c"target/release/libgame.so";
 
+const UPDATE_GAME: &CStr = c"update_game";
+
 impl GameDll {
     pub fn load() -> Self {
-        let update: extern "C" fn(*mut GameMemory);
+        let update: UpdateFn;
         let handle;
 
         unsafe {
@@ -42,8 +51,7 @@ impl GameDll {
                 panic!("Failed to load DLL");
             }
 
-            let fn_name = CString::new("update_game").unwrap();
-            let func: SDL_FunctionPointer = SDL_LoadFunction(handle, fn_name.as_ptr());
+            let func: SDL_FunctionPointer = SDL_LoadFunction(handle, UPDATE_GAME.as_ptr());
             if func.is_none() {
                 panic!("Failed to find symbol");
             }
@@ -53,9 +61,15 @@ impl GameDll {
         return GameDll { handle, update };
     }
 
-    pub fn update(&self, game_memory: &mut GameMemory) {
+    pub fn update(
+        &self,
+        game_memory: &mut GameMemory,
+        batch: &mut Batch,
+        screen_target: &RenderTarget,
+        device: &Device,
+    ) {
         let ptr: *mut GameMemory = game_memory;
-        (self.update)(ptr);
+        (self.update)(ptr, batch, screen_target, device);
     }
 }
 

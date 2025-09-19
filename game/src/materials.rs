@@ -1,9 +1,8 @@
-use sdl3::gpu::TextureFormat;
+use common::{graphics::material::{MaterialSpecification, ShaderSpecification}, TextureFormat};
 
-use crate::graphics::material::{MaterialSpecification, ShaderSpecification};
-
-static RED_SHADER_FRAGMENT_SRC: &str = include_str!("shaders/compiled/red.fragment.msl");
-static RED_SHADER_VERTEX_SRC: &str = include_str!("shaders/compiled/red.vertex.msl");
+//TODO: fix paths
+static RED_SHADER_FRAGMENT_SRC: &str = include_str!("../../common/src/shaders/compiled/red.fragment.msl");
+static RED_SHADER_VERTEX_SRC: &str = include_str!("../../common/src/shaders/compiled/red.vertex.msl");
 
 pub const RED_MATERIAL: MaterialSpecification = MaterialSpecification {
     fragment: ShaderSpecification {

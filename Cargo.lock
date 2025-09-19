@@ -43,7 +43,9 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "nalgebra-glm",
  "sdl3",
+ "stb_image",
 ]
 
 [[package]]
@@ -57,6 +59,7 @@ name = "game"
 version = "0.1.0"
 dependencies = [
  "common",
+ "nalgebra-glm",
 ]
 
 [[package]]
@@ -314,7 +317,6 @@ dependencies = [
  "common",
  "nalgebra-glm",
  "sdl3",
- "stb_image",
 ]
 
 [[package]]

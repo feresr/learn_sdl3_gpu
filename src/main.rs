@@ -1,6 +1,4 @@
 mod game_dll;
-mod graphics;
-mod materials;
 
 use common::game_memory::GameMemory;
 use sdl3::event::{Event, WindowEvent};
@@ -11,11 +9,10 @@ use std::time::{Duration, Instant};
 extern crate nalgebra_glm as glm;
 
 use crate::game_dll::GameDll;
-use crate::graphics::IDENTITY;
-use crate::graphics::batch::Batch;
-use crate::graphics::material::Material;
-use crate::graphics::render_target::RenderTarget;
-use crate::graphics::texture::Texture;
+
+use common::graphics::batch::Batch;
+use common::graphics::material::Material;
+use common::graphics::render_target::RenderTarget;
 
 pub const FPS: u64 = 60;
 pub const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / FPS);
@@ -44,34 +41,10 @@ fn main() {
     .with_window(&window) // Attach to window
     .expect("Unable to attach GPU device to window");
 
-    let red_material = Material::from_specification(device.clone(), &materials::RED_MATERIAL);
-
     let mut batch = Batch::new(device.clone(), Material::default(device.clone(), &window));
-    let dummy_texture = Texture::from_path(
-        device.clone(),
-        "/Users/feresr/Workspace/learn_sdl3_gpu/src/atlas-normal.png",
-    );
-
     let mut game_memory = GameMemory::default();
     let mut gamedll = GameDll::load();
     let mut screen_target = RenderTarget::empty();
-    let offscreen_target = RenderTarget::new(Texture::new(
-        device.clone(),
-        320,
-        180,
-        sdl3::gpu::TextureFormat::R8g8b8a8Unorm,
-        // device.get_swapchain_texture_format(&window), // TODO: Texture format
-    ));
-
-    let mut game_to_screen_matrix: glm::Mat4;
-    {
-        let mut cmd = device.acquire_command_buffer().unwrap();
-        let texture = cmd.wait_and_acquire_swapchain_texture(&window).unwrap();
-        screen_target.set_texture(texture);
-        game_to_screen_matrix = create_game_to_screen_target(&screen_target, &offscreen_target);
-        screen_target.clear_texture();
-        cmd.submit().unwrap();
-    }
 
     'running: loop {
         let start = Instant::now();
@@ -83,8 +56,7 @@ fn main() {
                     win_event: WindowEvent::Resized(width, height),
                 } => {
                     screen_target.resize(width, height);
-                    game_to_screen_matrix =
-                        create_game_to_screen_target(&screen_target, &offscreen_target);
+                    // TODO: handle updates in game
                 }
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -104,29 +76,11 @@ fn main() {
 
         let mut cmd = device.acquire_command_buffer().unwrap();
         let texture = cmd.wait_and_acquire_swapchain_texture(&window).unwrap();
+
         screen_target.set_texture(texture);
-
-        // Draw to offscreen target
-        {
-            gamedll.update(&mut game_memory);
-            batch.texture(dummy_texture.clone(), glm::vec2(0.0f32, 0.0f32));
-            batch.push_material(&red_material);
-            batch.circle([25.0f32, 90.0f32], 14.0f32, 54, [155, 255, 255, 255]);
-            batch.pop_material();
-            batch.draw(&offscreen_target);
-            batch.clear();
-        }
-
-        // Draw to window
-        {
-            batch.push_matrix(game_to_screen_matrix);
-            batch.texture(offscreen_target.color(), glm::vec2(0f32, 0f32));
-            batch.pop_matrix();
-            batch.draw(&screen_target);
-            batch.clear();
-        }
-
+        gamedll.update(&mut game_memory, &mut batch, &screen_target, &device);
         screen_target.clear_texture();
+
         cmd.submit().unwrap();
 
         precise_sleep(start);
@@ -149,33 +103,4 @@ fn main() {
             }
         }
     }
-}
-
-pub fn create_game_to_screen_target(
-    screen_target: &RenderTarget,
-    offscreen_target: &RenderTarget,
-) -> glm::Mat4 {
-    let scale = (screen_target.width as f32 / offscreen_target.width as f32)
-        .min(screen_target.height as f32 / offscreen_target.height as f32);
-
-    let screen_center: glm::Vec2 = glm::vec2(
-        screen_target.width as f32 / 2f32,
-        screen_target.height as f32 / 2f32,
-    );
-    let game_center: glm::Vec2 = glm::vec2(
-        offscreen_target.width as f32 / 2f32,
-        offscreen_target.height as f32 / 2f32,
-    );
-
-    let game_to_screen_matrix: glm::Mat4 =
-        create_transform(screen_center, game_center, glm::vec2(scale, scale));
-    return game_to_screen_matrix;
-}
-
-// TODO: Find a better place for this
-// TODO: Make translation in place
-pub fn create_transform(position: glm::Vec2, origin: glm::Vec2, scale: glm::Vec2) -> glm::Mat4 {
-    return glm::translate(&IDENTITY, &glm::vec3(position.x, position.y, 0.0f32))
-        * glm::scale(&IDENTITY, &glm::vec3(scale.x, scale.y, 1.0f32))
-        * glm::translate(&IDENTITY, &glm::vec3(-origin.x, -origin.y, 0.0f32));
 }
