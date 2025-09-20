@@ -54,6 +54,8 @@ fn main() {
     'running: loop {
         let start = Instant::now();
         keyboard.clear_pressed();
+        mouse.clear_relative_position();
+        mouse.clear_button_pressed();
         for event in event_pump.poll_iter() {
             match event {
                 Event::Window {
@@ -85,6 +87,9 @@ fn main() {
                 Event::MouseMotion {
                     x, y, xrel, yrel, ..
                 } => mouse.set_position(x, y, xrel, yrel),
+                Event::MouseWheel { x, y, ..} => {
+                    mouse.set_wheel(x, y);
+                }
                 _ => {}
             }
         }

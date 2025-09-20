@@ -1,17 +1,17 @@
 use crate::materials;
 use common::{
-    Device, TextureFormat,
-    graphics::{IDENTITY, material::Material, render_target::RenderTarget, texture::Texture},
+    graphics::{material::Material, render_target::RenderTarget, texture::Texture, IDENTITY}, ui::Gui, Device, TextureFormat
 };
 
-static FOO: &[u8; 488] =
-    include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/atlas-normal.png");
+static FOO: &[u8; 402] =
+    include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/atlas.png");
 
 pub struct GameState {
     pub material: Material,
     pub game_target: RenderTarget,
     pub dummy_texture: Texture,
     pub dummy_position: glm::Vec2,
+    pub gui : Gui
 }
 
 impl GameState {
@@ -29,6 +29,7 @@ impl GameState {
             game_target: offscreen_target,
             dummy_texture,
             dummy_position: glm::Vec2::default(),
+            gui : Gui::default()
         }
     }
 }

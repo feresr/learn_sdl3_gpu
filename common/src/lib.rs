@@ -1,6 +1,7 @@
 pub mod game_memory;
 pub mod graphics;
 pub mod input;
+pub mod ui;
 pub use sdl3::gpu::Device;
 pub use sdl3::gpu::TextureFormat;
 pub use sdl3::keyboard::Keycode;

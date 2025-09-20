@@ -154,6 +154,20 @@ impl Batch {
         );
     }
 
+    pub fn rect(
+        &mut self,
+        position: [f32; 3],
+        size: [f32; 2],
+        color : [u8; 4]
+    ) {
+        self.quad(
+            position,
+             [position[0] + size[0], position[1], position[2]],
+             [position[0], position[1] + size[1], position[2]],
+             [position[0] + size[0], position[1] + size[1], position[2]],
+                color);
+    }
+
     pub fn quad(
         &mut self,
         position0: [f32; 3],

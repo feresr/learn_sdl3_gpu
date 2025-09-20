@@ -3,8 +3,8 @@ use sdl3::mouse::MouseButton;
 #[derive(Default, Debug)]
 pub struct Mouse {
     position: glm::Vec2,
-    wheel: (i32, i32),
-    position_rel: (i32, i32),
+    wheel: glm::Vec2,
+    position_rel: glm::Vec2,
     left: bool,
     right: bool,
     left_held: bool,
@@ -17,13 +17,13 @@ impl Mouse {
     }
 
     // Getters
-    pub fn left_pressed() -> bool {
+    pub fn left_clicked() -> bool {
         Self::get().left
     }
     pub fn left_held() -> bool {
         Self::get().left_held
     }
-    pub fn right_pressed() -> bool {
+    pub fn right_clicked() -> bool {
         Self::get().right
     }
     pub fn right_held() -> bool {
@@ -39,30 +39,31 @@ impl Mouse {
         (projection * glm::vec4(position.x, position.y, 0f32, 1.0f32)).xy()
     }
 
-    pub fn position_rel() -> (i32, i32) {
+    pub fn position_rel() -> glm::Vec2 {
         Self::get().position_rel
     }
 
-    pub fn wheel() -> (i32, i32) {
+    pub fn wheel() -> glm::Vec2 {
         Self::get().wheel
     }
 
     pub fn mouse_button_down(&mut self, button: MouseButton) {
         match button {
             MouseButton::Left => {
-                self.left = !self.left_held;
+                self.left = true;
                 self.left_held = true;
             }
             MouseButton::Right => {
-                self.right = !self.right_held;
                 self.right = true;
+                self.right_held = true;
             }
             _ => {}
         }
     }
 
-    pub fn set_wheel(&mut self, x: i32, y: i32) {
-        self.wheel = (x, y);
+    pub fn set_wheel(&mut self, x: f32, y: f32) {
+        self.wheel.x = x;
+        self.wheel.y = y;
     }
 
     pub fn mouse_button_up(&mut self, button: MouseButton) {
@@ -80,8 +81,24 @@ impl Mouse {
     }
 
     pub fn set_position(&mut self, x: f32, y: f32, xrel: f32, yrel: f32) {
-        self.position = glm::vec2(x, y);
-        self.position_rel = (xrel as i32, yrel as i32);
+        self.position.x = x;
+        self.position.y = y;
+        self.position_rel.x += xrel;
+        self.position_rel.y += yrel;
+    }
+
+    /**
+     * The relative position is only valid for one frame
+     * If the mouse does not move from frame 0 to frame 1 no MotionEvent will trigger...
+     * Which means no Mouse.set_position(x, y, xrel, yrel) invokation.
+     * Therefore, we need to clear this manually at the end of the frame.
+     */
+    pub fn clear_relative_position(&mut self) {
+        self.position_rel.scale_mut(0f32);
+    }
+    pub fn clear_button_pressed(&mut self) {
+        self.left = false;
+        self.right = false;
     }
 }
 

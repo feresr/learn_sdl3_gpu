@@ -9,7 +9,13 @@ pub struct GameMemory {
 }
 
 impl GameMemory {
-    pub const GAME_MEMORY: usize = 1024;
+
+    #[cfg(not(debug_assertions))]
+    pub const GAME_MEMORY: usize = 1024 * 2;
+
+    // Debug ImGui requires more memory 
+    #[cfg(debug_assertions)]
+    pub const GAME_MEMORY: usize = 1024 * 4;
 
     pub fn default() -> Self {
         let storage = unsafe { SDL_malloc(GameMemory::GAME_MEMORY) };

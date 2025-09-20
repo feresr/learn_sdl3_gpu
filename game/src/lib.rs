@@ -6,9 +6,10 @@ use common::{
         keyboard::{KEYBOARD, Keyboard},
         mouse::{MOUSE, Mouse},
     },
+    ui::{GUI, Gui, window::Widget},
 };
 
-use crate::game_state::{game_to_screen_projection, GameState};
+use crate::game_state::{GameState, game_to_screen_projection};
 
 mod game_state;
 mod materials;
@@ -34,19 +35,28 @@ pub extern "C" fn update_game(
         unsafe { (game_memory.storage as *mut GameState).write(GameState::new(device.clone())) }
         game_memory.initialized = true;
     }
+
+    let game_state: &mut GameState = unsafe { &mut *(game_memory.storage as *mut GameState) };
+
     // TODO: Doing this every frame might be unnecessary, introduce game_memory.hot_reloaded or similar
     // TODO: Use this approach with Device?
     unsafe {
         KEYBOARD = keyboard as *const Keyboard;
         MOUSE = mouse as *const Mouse;
+        GUI = &mut game_state.gui as *mut Gui;
     }
 
-    let game_state: &mut GameState = unsafe { &mut *(game_memory.storage as *mut GameState) };
-
-    let game_to_screen_projection = game_to_screen_projection(&game_state.game_target, screen_target);
+    // TODO: Avoid re-creating this on very frame.
+    let game_to_screen_projection =
+        game_to_screen_projection(&game_state.game_target, screen_target);
     let mouse_position: glm::Vec2 = Mouse::position();
     let game_mouse_position =
         Mouse::position_projected(&game_to_screen_projection.try_inverse().unwrap());
+
+    let window = Gui::window(100f32, 200f32);
+    window.add_widget(Widget::TEXTURE(game_state.dummy_texture.clone()));
+    window.add_widget(Widget::TEXTURE(game_state.dummy_texture.clone()));
+    window.add_widget(Widget::TEXTURE(game_state.dummy_texture.clone()));
 
     if Keyboard::held(Keycode::A) {
         game_state.dummy_position.x -= 1.0f32;
@@ -60,7 +70,10 @@ pub extern "C" fn update_game(
         batch.push_material(&game_state.material);
 
         batch.circle(
-            [game_mouse_position.x as i32 as f32, game_mouse_position.y as i32 as f32],
+            [
+                game_mouse_position.x as i32 as f32,
+                game_mouse_position.y as i32 as f32,
+            ],
             14.0f32,
             54,
             [255, 255, 255, 255],
@@ -68,6 +81,7 @@ pub extern "C" fn update_game(
         batch.pop_material();
 
         batch.texture(game_state.dummy_texture.clone(), game_state.dummy_position);
+
         batch.draw_into(&game_state.game_target);
         batch.clear();
     }
@@ -83,6 +97,8 @@ pub extern "C" fn update_game(
             54,
             [255, 255, 255, 255],
         );
+
+        Gui::draw(batch);
 
         batch.draw_into(&screen_target);
         batch.clear();
