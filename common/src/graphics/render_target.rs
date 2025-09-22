@@ -12,6 +12,19 @@ enum BackingTexture {
     Texture(Texture),
 }
 
+const CLEAR_COLOR_SCREEN: Color = Color {
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 255,
+};
+const CLEAR_COLOR: Color = Color {
+    r: 25,
+    g: 25,
+    b: 25,
+    a: 255,
+};
+
 pub struct RenderTarget {
     pub width: u32,
     pub height: u32,
@@ -109,20 +122,9 @@ impl RenderTarget {
             BackingTexture::Texture(texture) => texture.inner(),
         };
 
-        // TODO remove clear_color separation beween screen and back_buffers?
         let clear_color = match &self.texture {
-            BackingTexture::Screen(_) => Color {
-                r: 25,
-                g: 25,
-                b: 25,
-                a: 255,
-            }, // Red for screen
-            BackingTexture::Texture(_) => Color {
-                r: 0,
-                g: 255,
-                b: 0,
-                a: 255,
-            }, // Green for offscreen
+            BackingTexture::Screen(_) => CLEAR_COLOR_SCREEN,
+            BackingTexture::Texture(_) => CLEAR_COLOR,
         };
 
         ColorTargetInfo::default()

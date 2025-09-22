@@ -21,7 +21,7 @@ pub struct Texture {
     inner_texture: sdl3::gpu::Texture<'static>,
     inner_sampler: Sampler,
     transfer_buffer: TransferBuffer,
-    uploaded: bool, // TODO: rename to needs_upload
+    uploaded: bool, // TODO: rename to needs_upload?
 }
 
 impl PartialEq for Texture {

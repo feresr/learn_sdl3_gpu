@@ -294,10 +294,8 @@ impl Batch {
             );
 
             for batch in &self.batches {
-                if batch.texture.is_some() {
-                    // TODO do not use .unwrap()
-                    render_pass
-                        .bind_fragment_samplers(0, &[batch.texture.as_ref().unwrap().bindings()]);
+                if let Some(texture) = &batch.texture {
+                    render_pass.bind_fragment_samplers(0, &[texture.bindings()]);
                 }
                 render_pass.bind_graphics_pipeline(&batch.material.pipeline);
                 render_pass.draw_indexed_primitives(

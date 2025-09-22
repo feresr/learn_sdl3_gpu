@@ -1,8 +1,15 @@
-use common::{graphics::material::{MaterialSpecification, ShaderSpecification}, TextureFormat};
+use common::{
+    TextureFormat,
+    graphics::material::{MaterialSpecification, ShaderSpecification},
+};
 
-//TODO: fix paths
-static RED_SHADER_FRAGMENT_SRC: &str = include_str!("../../common/src/shaders/compiled/red.fragment.msl");
-static RED_SHADER_VERTEX_SRC: &str = include_str!("../../common/src/shaders/compiled/red.vertex.msl");
+// TODO: find a way to store Shaders in common/ and game/ and re compile them easily.
+static RED_SHADER_FRAGMENT_SRC: &str = include_str!(
+    "/Users/feresr/Workspace/learn_sdl3_gpu/common/src/shaders/compiled/red.fragment.msl"
+);
+static RED_SHADER_VERTEX_SRC: &str = include_str!(
+    "/Users/feresr/Workspace/learn_sdl3_gpu/common/src/shaders/compiled/red.vertex.msl"
+);
 
 pub const RED_MATERIAL: MaterialSpecification = MaterialSpecification {
     fragment: ShaderSpecification {

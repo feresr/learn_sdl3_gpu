@@ -27,10 +27,8 @@ impl PartialEq for Material {
     }
 }
 
-// TODO: Rename default shader to default.hlsl
-static DEFAULT_SHADER_FRAGMENT_SRC: &str =
-    include_str!("../shaders/compiled/triangle.fragment.msl");
-static DEFAULT_SHADER_VERTEX_SRC: &str = include_str!("../shaders/compiled/triangle.vertex.msl");
+static DEFAULT_SHADER_FRAGMENT_SRC: &str = include_str!("../shaders/compiled/default.fragment.msl");
+static DEFAULT_SHADER_VERTEX_SRC: &str = include_str!("../shaders/compiled/default.vertex.msl");
 
 impl Material {
     pub fn default(device: Device, window: &Window) -> Self {
