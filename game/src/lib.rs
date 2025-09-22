@@ -53,10 +53,21 @@ pub extern "C" fn update_game(
     let game_mouse_position =
         Mouse::position_projected(&game_to_screen_projection.try_inverse().unwrap());
 
-    let window = Gui::window(100f32, 200f32);
-    window.add_widget(Widget::TEXTURE(game_state.dummy_texture.clone()));
-    window.add_widget(Widget::TEXTURE(game_state.dummy_texture.clone()));
-    window.add_widget(Widget::TEXTURE(game_state.dummy_texture.clone()));
+    {
+        let window = Gui::window("Game Offscreen Target");
+        window.add_widget(Widget::TEXTURE(game_state.game_target.color()));
+        window.add_widget(Widget::TEXT("Example test"));
+    }
+
+    {
+        let window = Gui::window("Mouse data");
+        game_state.dummy_string.clear();
+        game_state.dummy_string.push_str(&format!(
+            "Position x:{:.1} y:{:.1}",
+            mouse_position.x, mouse_position.y
+        ));
+        window.add_widget(Widget::TEXT(&game_state.dummy_string));
+    }
 
     if Keyboard::held(Keycode::A) {
         game_state.dummy_position.x -= 1.0f32;
@@ -81,6 +92,7 @@ pub extern "C" fn update_game(
         batch.pop_material();
 
         batch.texture(game_state.dummy_texture.clone(), game_state.dummy_position);
+        batch.subtexture(game_state.dummy_subtexture.clone(), glm::vec2(0f32, 0f32));
 
         batch.draw_into(&game_state.game_target);
         batch.clear();

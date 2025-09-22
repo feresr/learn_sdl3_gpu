@@ -2,6 +2,7 @@ pub mod batch;
 pub mod material;
 pub mod mesh;
 pub mod texture;
+pub mod subtexture;
 pub mod render_target;
 
 #[repr(C)]

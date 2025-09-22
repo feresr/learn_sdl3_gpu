@@ -1,6 +1,11 @@
 use crate::materials;
 use common::{
-    graphics::{material::Material, render_target::RenderTarget, texture::Texture, IDENTITY}, ui::Gui, Device, TextureFormat
+    Device, Rect, TextureFormat,
+    graphics::{
+        IDENTITY, material::Material, render_target::RenderTarget, subtexture::Subtexture,
+        texture::Texture,
+    },
+    ui::Gui,
 };
 
 static FOO: &[u8; 402] =
@@ -10,8 +15,10 @@ pub struct GameState {
     pub material: Material,
     pub game_target: RenderTarget,
     pub dummy_texture: Texture,
+    pub dummy_subtexture: Subtexture,
     pub dummy_position: glm::Vec2,
-    pub gui : Gui
+    pub dummy_string: String,
+    pub gui: Gui,
 }
 
 impl GameState {
@@ -24,12 +31,15 @@ impl GameState {
         ));
 
         let dummy_texture = Texture::from_bytes(device.clone(), FOO);
+        let dummy_subtexture = Subtexture::new(dummy_texture.clone(), Rect::new(8, 8, 8, 8));
         GameState {
             material: Material::from_specification(device.clone(), &materials::RED_MATERIAL),
             game_target: offscreen_target,
             dummy_texture,
+            dummy_subtexture,
             dummy_position: glm::Vec2::default(),
-            gui : Gui::default()
+            dummy_string: Default::default(),
+            gui: Gui::new(device.clone()),
         }
     }
 }

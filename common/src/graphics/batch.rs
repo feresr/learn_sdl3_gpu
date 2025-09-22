@@ -6,6 +6,7 @@ use sdl3::gpu::{BufferBinding, Device};
 use crate::graphics::material::Material;
 use crate::graphics::mesh::Mesh;
 use crate::graphics::render_target::RenderTarget;
+use crate::graphics::subtexture::Subtexture;
 use crate::graphics::texture::Texture;
 use crate::graphics::{IDENTITY, Vertex};
 
@@ -147,6 +148,10 @@ impl Batch {
             position1,
             position2,
             position3,
+            [0f32, 0f32],
+            [1f32, 0f32],
+            [0f32, 1f32],
+            [1f32, 1f32],
             255,
             0,
             0,
@@ -154,18 +159,55 @@ impl Batch {
         );
     }
 
-    pub fn rect(
-        &mut self,
-        position: [f32; 3],
-        size: [f32; 2],
-        color : [u8; 4]
-    ) {
+    pub fn subtexture(&mut self, subtexture: Subtexture, position: glm::Vec2) {
+        let mut current_batch = self.current_batch();
+        match current_batch.texture.as_ref() {
+            Some(batch_texture) => {
+                if batch_texture != &subtexture.texture {
+                    self.push_batch();
+                    current_batch = self.current_batch();
+                }
+                current_batch.texture = Some(subtexture.texture.clone())
+            }
+            None => {
+                current_batch.texture = Some(subtexture.texture.clone());
+            }
+        }
+
+        let position0 = [position.x, position.y, 0.0f32];
+        let position1 = [position.x + subtexture.rect.w as f32, position.y, 0.0f32];
+        let position2 = [position.x, position.y + subtexture.rect.h as f32, 0.0f32];
+        let position3 = [
+            position.x + subtexture.rect.w as f32,
+            position.y + subtexture.rect.h as f32,
+            0.0f32,
+        ];
+
+        let uvs = subtexture.uvs;
+        self.push_quad(
+            position0,
+            position1,
+            position2,
+            position3,
+            [uvs.x, uvs.y],
+            [uvs.x + uvs.w, uvs.y],
+            [uvs.x, uvs.y + uvs.h],
+            [uvs.x + uvs.w, uvs.y + uvs.h],
+            255,
+            0,
+            0,
+            [255, 255, 255, 255],
+        );
+    }
+
+    pub fn rect(&mut self, position: [f32; 3], size: [f32; 2], color: [u8; 4]) {
         self.quad(
             position,
-             [position[0] + size[0], position[1], position[2]],
-             [position[0], position[1] + size[1], position[2]],
-             [position[0] + size[0], position[1] + size[1], position[2]],
-                color);
+            [position[0] + size[0], position[1], position[2]],
+            [position[0], position[1] + size[1], position[2]],
+            [position[0] + size[0], position[1] + size[1], position[2]],
+            color,
+        );
     }
 
     pub fn quad(
@@ -176,7 +218,20 @@ impl Batch {
         position3: [f32; 3],
         color: [u8; 4],
     ) {
-        self.push_quad(position0, position1, position2, position3, 0, 0, 255, color);
+        self.push_quad(
+            position0,
+            position1,
+            position2,
+            position3,
+            [0f32, 0f32],
+            [1f32, 0f32],
+            [0f32, 1f32],
+            [1f32, 1f32],
+            0,
+            0,
+            255,
+            color,
+        );
     }
 
     pub fn circle(&mut self, center: [f32; 2], radius: f32, steps: u32, color: [u8; 4]) {
@@ -265,6 +320,10 @@ impl Batch {
         position1: [f32; 3],
         position2: [f32; 3],
         position3: [f32; 3],
+        uv0: [f32; 2],
+        uv1: [f32; 2],
+        uv2: [f32; 2],
+        uv3: [f32; 2],
         mult: u8,
         wash: u8,
         fill: u8,
@@ -286,10 +345,10 @@ impl Batch {
             3 + last_vertex_index,
         ]);
         self.vertices.reserve(4);
-        self.push_vertex(position0, color, [0f32, 0f32], mult, wash, fill);
-        self.push_vertex(position1, color, [1f32, 0f32], mult, wash, fill);
-        self.push_vertex(position2, color, [0f32, 1f32], mult, wash, fill);
-        self.push_vertex(position3, color, [1f32, 1f32], mult, wash, fill);
+        self.push_vertex(position0, color, uv0, mult, wash, fill);
+        self.push_vertex(position1, color, uv1, mult, wash, fill);
+        self.push_vertex(position2, color, uv2, mult, wash, fill);
+        self.push_vertex(position3, color, uv3, mult, wash, fill);
         self.current_batch().elements += 2;
     }
 

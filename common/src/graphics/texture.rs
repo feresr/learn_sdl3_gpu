@@ -5,22 +5,19 @@ use sdl3::gpu::{
     TextureRegion, TextureSamplerBinding, TextureTransferInfo, TransferBuffer,
 };
 
-static mut NEXT_ID: u32 = 0;
+static mut NEXT_ID: u16 = 0;
 
-// TODO: is cloning textures the best approach?
-// Adding a texture manager would be better?
-// A drawbach has owns Texture, inner_texture has a Arc so: cloning should be cheap,
-// the texture will drop when nothing is using it.
+// TODO: is cloning textures the best approach? The size of this 64 is on the border of being expensive.
 /**
- * Wraps around a Texture + Sampler.
- * Both of these are Rc so this struct can be copied freely.
+ * Handle wrapping around a Texture + Sampler.
+ * Both of these are Arc so this struct can be copied freely.
  */
 #[derive(Clone)]
 pub struct Texture {
-    pub id: u32,
-    pub width: i32,
-    pub height: i32,
-    pub format: TextureFormat,
+    pub id: u16,
+    // TODO: you can get these from inner texture 
+    pub width: u16,
+    pub height: u16,
     inner_texture: sdl3::gpu::Texture<'static>,
     inner_sampler: Sampler,
     transfer_buffer: TransferBuffer,
@@ -47,8 +44,8 @@ impl Texture {
 
         let mut texture = Texture::new(
             device.clone(),
-            image.width as i32,
-            image.height as i32,
+            image.width as u16,
+            image.height as u16,
             // TextureFormat::B8g8r8a8Unorm, // TODO
             TextureFormat::R8g8b8a8Unorm,
         );
@@ -75,8 +72,8 @@ impl Texture {
 
         let mut texture = Texture::new(
             device.clone(),
-            image.width as i32,
-            image.height as i32,
+            image.width as u16,
+            image.height as u16,
             // TextureFormat::B8g8r8a8Unorm, // TODO
             TextureFormat::R8g8b8a8Unorm,
         );
@@ -114,7 +111,7 @@ impl Texture {
         );
     }
 
-    pub fn new(device: Device, width: i32, height: i32, texture_format: TextureFormat) -> Self {
+    pub fn new(device: Device, width: u16, height: u16, texture_format: TextureFormat) -> Self {
         let texture = device
             .create_texture(
                 TextureCreateInfo::new()
@@ -142,8 +139,8 @@ impl Texture {
             )
             .expect("Could not create sampler");
 
-        let channels = 4;
-        let size = width * height * channels;
+        let channels: u32 = 4;
+        let size = (width as u32 * height as u32) * channels;
         let transfer_buffer = device
             .create_transfer_buffer()
             .with_usage(sdl3::sys::gpu::SDL_GPUTransferBufferUsage::UPLOAD)
@@ -161,7 +158,6 @@ impl Texture {
             id,
             width,
             height,
-            format: texture_format,
             inner_texture: texture,
             inner_sampler: sampler,
             transfer_buffer: transfer_buffer,

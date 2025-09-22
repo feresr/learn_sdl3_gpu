@@ -1,8 +1,9 @@
 use sdl3::{
     gpu::{
-        ColorTargetDescription, Device, GraphicsPipeline, GraphicsPipelineTargetInfo,
-        PrimitiveType, Shader, ShaderFormat, ShaderStage, TextureFormat, VertexAttribute,
-        VertexBufferDescription, VertexElementFormat, VertexInputRate, VertexInputState,
+        BlendFactor, ColorTargetBlendState, ColorTargetDescription, Device, GraphicsPipeline,
+        GraphicsPipelineTargetInfo, PrimitiveType, Shader, ShaderFormat, ShaderStage,
+        TextureFormat, VertexAttribute, VertexBufferDescription, VertexElementFormat,
+        VertexInputRate, VertexInputState,
     },
     video::Window,
 };
@@ -81,7 +82,18 @@ impl Material {
             .create_graphics_pipeline()
             .with_target_info(
                 GraphicsPipelineTargetInfo::new().with_color_target_descriptions(&[
-                    ColorTargetDescription::new().with_format(target_texture_format),
+                    ColorTargetDescription::new()
+                        .with_blend_state(
+                            ColorTargetBlendState::new()
+                                .with_src_color_blendfactor(BlendFactor::SrcAlpha)
+                                .with_dst_color_blendfactor(BlendFactor::OneMinusSrcAlpha)
+                                .with_src_alpha_blendfactor(BlendFactor::One)
+                                .with_dst_alpha_blendfactor(BlendFactor::OneMinusSrcAlpha)
+                                .with_alpha_blend_op(sdl3::gpu::BlendOp::Add)
+                                .with_color_blend_op(sdl3::gpu::BlendOp::Add)
+                                .with_enable_blend(true),
+                        )
+                        .with_format(target_texture_format),
                 ]),
             )
             .with_primitive_type(PrimitiveType::TriangleList)

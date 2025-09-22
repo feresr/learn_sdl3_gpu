@@ -16,7 +16,7 @@ struct VsOutput
     float4 mult_wash_fill_pad;
 };
 
-constant float4 _39 = {};
+constant float4 _37 = {};
 
 struct fragment_main_out
 {
@@ -33,19 +33,18 @@ struct fragment_main_in
 fragment fragment_main_out fragment_main(fragment_main_in in [[stage_in]], texture2d<float> Texture [[texture(0)]], sampler Sampler [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     fragment_main_out out = {};
-    float2 _44 = in.in_var_TEXCOORD0;
-    float4 _43 = in.in_var_TEXCOORD1;
-    float4 _42 = in.in_var_TEXCOORD3;
-    float4 _45 = Texture.sample(Sampler, in.in_var_TEXCOORD0);
-    float4 _46 = in.in_var_TEXCOORD1;
-    float _47 = in.in_var_TEXCOORD3.x;
-    float _48 = in.in_var_TEXCOORD3.y;
-    float _49 = in.in_var_TEXCOORD3.z;
-    float4 _76 = (((_45 * in.in_var_TEXCOORD3.x) * in.in_var_TEXCOORD1) + (in.in_var_TEXCOORD1 * (in.in_var_TEXCOORD3.y * _45.w))) + (in.in_var_TEXCOORD1 * in.in_var_TEXCOORD3.z);
-    float4 _50 = _76;
-    float4 _81 = float4(_76.xyz, 1.0);
-    float4 _51 = _81;
-    out.out_var_SV_Target0 = _81;
+    float2 _42 = in.in_var_TEXCOORD0;
+    float4 _41 = in.in_var_TEXCOORD1;
+    float4 _40 = in.in_var_TEXCOORD3;
+    float4 _43 = Texture.sample(Sampler, in.in_var_TEXCOORD0);
+    float4 _44 = in.in_var_TEXCOORD1;
+    float _45 = in.in_var_TEXCOORD3.x;
+    float _46 = in.in_var_TEXCOORD3.y;
+    float _47 = in.in_var_TEXCOORD3.z;
+    float4 _74 = (((_43 * in.in_var_TEXCOORD3.x) * in.in_var_TEXCOORD1) + (in.in_var_TEXCOORD1 * (in.in_var_TEXCOORD3.y * _43.w))) + (in.in_var_TEXCOORD1 * in.in_var_TEXCOORD3.z);
+    float4 _48 = _74;
+    float4 _49 = _74;
+    out.out_var_SV_Target0 = _74;
     return out;
 }
 
