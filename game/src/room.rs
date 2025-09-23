@@ -1,3 +1,5 @@
+use common::utils::texture_atlas::TextureAtlas;
+
 pub const TILES_PER_ROW: usize = 40;
 pub const TILES_PER_COLUMN: usize = 24;
 pub const TILE_COUNT: usize = (TILES_PER_ROW * TILES_PER_COLUMN) as usize;
@@ -23,15 +25,26 @@ impl Room {
             foreground_tiles: foreground,
         }
     }
+
+    pub(crate) fn render(
+        &self,
+        batch: &mut common::graphics::batch::Batch,
+        atlas: &TextureAtlas,
+    ) {
+        for (x, y, tile) in &self.foreground_tiles {
+            let sprite = atlas.get((y + tile.id as usize) as u16 % 3, (x + y) as u16 % 3);
+            batch.subtexture(sprite, glm::vec2(x as f32 * 8f32, y as f32 * 8f32));
+        }
+    }
+}
+
+pub struct Tiles {
+    inner: [Tile; TILE_COUNT],
 }
 
 #[derive(Default, Clone, Copy)]
 pub struct Tile {
     pub id: u16,
-}
-
-pub struct Tiles {
-    inner: [Tile; TILE_COUNT],
 }
 
 impl Default for Tiles {

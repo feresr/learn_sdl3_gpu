@@ -9,7 +9,6 @@ use crate::graphics::render_target::RenderTarget;
 use crate::graphics::subtexture::Subtexture;
 use crate::graphics::texture::Texture;
 use crate::graphics::{IDENTITY, Vertex};
-use crate::ui::widget::Widget;
 
 pub struct Batch {
     device: Device,
@@ -388,18 +387,16 @@ impl Batch {
         });
     }
 
+    pub fn get_batch_count(&self) -> usize {
+        self.batches.len()
+    }
+
     pub fn clear(&mut self) {
         self.batches.clear();
         self.vertices.clear();
         self.indices.clear();
         self.matrix_stack.clear();
         self.material_stack.clear();
-    }
-
-    // TODO: This might not belong here add a function debug_batch(batch, window)?
-    pub fn debug(&self, window: &'static mut crate::ui::window::Window) {
-        window.add_widget(Widget::TEXT("Batch state:".into()));
-        window.add_widget(Widget::TEXT(format!("Draw count: {}", self.batches.len())));
     }
 }
 
