@@ -12,6 +12,7 @@ static RED_SHADER_VERTEX_SRC: &str = include_str!(
 );
 
 pub const RED_MATERIAL: MaterialSpecification = MaterialSpecification {
+    name: "RED MATERIAL",
     fragment: ShaderSpecification {
         src: RED_SHADER_FRAGMENT_SRC,
         sampler_count: 1,

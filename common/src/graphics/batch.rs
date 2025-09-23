@@ -295,6 +295,10 @@ impl Batch {
             );
 
             for batch in &self.batches {
+                if batch.elements == 0 {
+                    // TODO: Is adding an empty batch needed?
+                    break;
+                }
                 if let Some(texture) = &batch.texture {
                     render_pass.bind_fragment_samplers(0, &[texture.bindings()]);
                 }
@@ -388,7 +392,7 @@ impl Batch {
     }
 
     pub fn get_batch_count(&self) -> usize {
-        self.batches.len()
+        self.batches.iter().filter(|b| b.elements > 0).count()
     }
 
     pub fn clear(&mut self) {

@@ -16,6 +16,7 @@ static VS_ENTRY: &CStr = c"vertex_main";
 
 #[derive(Clone)]
 pub struct Material {
+    pub name: &'static str,
     pub pipeline: GraphicsPipeline,
     pub target_texture_format: TextureFormat,
 }
@@ -23,7 +24,7 @@ pub struct Material {
 impl PartialEq for Material {
     fn eq(&self, other: &Self) -> bool {
         self.pipeline.raw() == other.pipeline.raw()
-            && self.target_texture_format == other.target_texture_format
+            && self.name == other.name
     }
 }
 
@@ -67,10 +68,11 @@ impl Material {
 
         let texture_format = device.get_swapchain_texture_format(&window);
 
-        return Self::new(device, vs, fs, texture_format);
+        return Self::new("default", device, vs, fs, texture_format);
     }
 
     pub fn new(
+        name: &'static str,
         device: Device,
         vs: Shader,
         fs: Shader,
@@ -135,6 +137,7 @@ impl Material {
             .unwrap();
 
         return Material {
+            name,
             pipeline: graphics_pipeline,
             target_texture_format: target_texture_format,
         };
@@ -175,7 +178,13 @@ impl Material {
             .build()
             .expect("Unable to create vertex shader");
 
-        return Self::new(device, vs, fs, specification.texture_format);
+        return Self::new(
+            specification.name,
+            device,
+            vs,
+            fs,
+            specification.texture_format,
+        );
     }
 }
 
@@ -186,6 +195,7 @@ pub struct ShaderSpecification {
 }
 
 pub struct MaterialSpecification {
+    pub name: &'static str,
     pub fragment: ShaderSpecification,
     pub vertex: ShaderSpecification,
     pub texture_format: TextureFormat,

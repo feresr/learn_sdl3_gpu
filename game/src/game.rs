@@ -45,7 +45,9 @@ impl Game {
         }
     }
 
-    pub(crate) fn update(&mut self) {}
+    pub(crate) fn update(&mut self) {
+
+    }
 
     pub(crate) fn render(&self, batch: &mut Batch) {
         let game_mouse_position = Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
@@ -68,7 +70,6 @@ impl Game {
             54,
             [255, 255, 255, 255],
         );
-
         batch.pop_material();
     }
 }

@@ -63,6 +63,7 @@ pub extern "C" fn update_game(
     {
         game.render(batch);
         batch.draw_into(&game.game_target);
+        let draw_count = batch.get_batch_count();
 
         // Add debug informatoin
         {
@@ -73,7 +74,7 @@ pub extern "C" fn update_game(
             }
             window.add_widget(Widget::TEXTURE(game.game_target.color()));
             window.add_widget(Widget::TEXT("Batch state:".into()));
-            window.add_widget(Widget::TEXT(format!("Draw count: {}", batch.get_batch_count())));
+            window.add_widget(Widget::TEXT(format!("Draw count: {}", draw_count)));
         }
 
         batch.clear();
