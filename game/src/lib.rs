@@ -6,7 +6,7 @@ use common::{
         keyboard::{KEYBOARD, Keyboard},
         mouse::{MOUSE, Mouse},
     },
-    ui::{GUI, Gui, window::Widget},
+    ui::{GUI, Gui, widget::Widget},
 };
 
 use crate::game_state::{GameState, game_to_screen_projection};
@@ -56,7 +56,14 @@ pub extern "C" fn update_game(
     {
         let window = Gui::window("Game Offscreen Target");
         window.add_widget(Widget::TEXTURE(game_state.game_target.color()));
-        window.add_widget(Widget::TEXT("Example test"));
+        window.add_widget(Widget::TEXT("Example test text 123456789"));
+        if window.add_widget(Widget::BUTTON("Click me!",[80, 29, 175, 255] )) {
+            println!("button A clicked")
+        }
+        if window.add_widget(Widget::BUTTON("A very long button label", [48, 148, 255, 255])) {
+            println!("button B clicked")
+        }
+        window.add_widget(Widget::TEXT("You can drag this window around!"));
     }
 
     {

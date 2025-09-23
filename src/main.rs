@@ -54,7 +54,7 @@ fn main() {
     'running: loop {
         let start = Instant::now();
         keyboard.clear_pressed();
-        mouse.clear_relative_position();
+        mouse.clear_position_delta();
         mouse.clear_button_pressed();
         for event in event_pump.poll_iter() {
             match event {
@@ -62,7 +62,7 @@ fn main() {
                     timestamp: _,
                     window_id: _,
                     win_event: WindowEvent::Resized(width, height),
-                } =>  screen_target.resize(width, height),
+                } => screen_target.resize(width, height),
                 Event::Quit { .. }
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
@@ -87,7 +87,7 @@ fn main() {
                 Event::MouseMotion {
                     x, y, xrel, yrel, ..
                 } => mouse.set_position(x, y, xrel, yrel),
-                Event::MouseWheel { x, y, ..} => {
+                Event::MouseWheel { x, y, .. } => {
                     mouse.set_wheel(x, y);
                 }
                 _ => {}

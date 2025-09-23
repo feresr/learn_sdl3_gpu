@@ -4,7 +4,7 @@ use sdl3::mouse::MouseButton;
 pub struct Mouse {
     position: glm::Vec2,
     wheel: glm::Vec2,
-    position_rel: glm::Vec2,
+    position_delta: glm::Vec2,
     left: bool,
     right: bool,
     left_held: bool,
@@ -34,13 +34,20 @@ impl Mouse {
         Self::get().position
     }
 
+    pub fn position_relative(to: glm::Vec2) -> glm::Vec2 {
+        Self::get().position - to
+    }
+
     pub fn position_projected(projection: &glm::Mat4) -> glm::Vec2 {
         let position = Self::get().position;
         (projection * glm::vec4(position.x, position.y, 0f32, 1.0f32)).xy()
     }
 
-    pub fn position_rel() -> glm::Vec2 {
-        Self::get().position_rel
+    /**
+     * Returns the position delta from the previous frame
+     */
+    pub fn position_delta() -> glm::Vec2 {
+        Self::get().position_delta
     }
 
     pub fn wheel() -> glm::Vec2 {
@@ -80,11 +87,11 @@ impl Mouse {
         }
     }
 
-    pub fn set_position(&mut self, x: f32, y: f32, xrel: f32, yrel: f32) {
+    pub fn set_position(&mut self, x: f32, y: f32, xdelta: f32, ydelta: f32) {
         self.position.x = x;
         self.position.y = y;
-        self.position_rel.x += xrel;
-        self.position_rel.y += yrel;
+        self.position_delta.x += xdelta;
+        self.position_delta.y += ydelta;
     }
 
     /**
@@ -93,9 +100,10 @@ impl Mouse {
      * Which means no Mouse.set_position(x, y, xrel, yrel) invokation.
      * Therefore, we need to clear this manually at the end of the frame.
      */
-    pub fn clear_relative_position(&mut self) {
-        self.position_rel.scale_mut(0f32);
+    pub fn clear_position_delta(&mut self) {
+        self.position_delta.scale_mut(0f32);
     }
+
     pub fn clear_button_pressed(&mut self) {
         self.left = false;
         self.right = false;

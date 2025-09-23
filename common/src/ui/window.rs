@@ -1,30 +1,18 @@
 use crate::{
-    graphics::{batch::Batch, texture::Texture},
+    graphics::batch::Batch,
     input::mouse::Mouse,
+    ui::widget::{BUTTON_HEIGHT, Widget},
     utils::atlas::Atlas,
 };
 
-const MAX_WIDGETS: usize = 4;
-const HEADER_HEIGHT: f32 = 32f32;
-const PADDING: f32 = 8f32;
-
-pub enum Widget {
-    TEXT(&'static str),
-    BUTTON,
-    TEXTURE(Texture),
-    NONE,
-}
-
-impl Default for Widget {
-    fn default() -> Self {
-        Widget::NONE
-    }
-}
+const MAX_WIDGETS: usize = 6;
+pub(crate) const PADDING: f32 = 8f32;
+pub(crate) const HEADER_HEIGHT: f32 = 32f32;
 
 #[derive(Default)]
 pub struct Window {
     pub position: glm::Vec2,
-    pub (crate) size: glm::Vec2,
+    pub(crate) size: glm::Vec2,
     pub title: &'static str,
     dragging: bool,
     hovering: bool,
@@ -37,9 +25,9 @@ impl Window {
     /**
      * Returns true if this window has (or is about to) captured the drag gesture.
      */
-    pub(crate) fn update(&mut self, drag_allowed: bool) -> bool {
+    pub(crate) fn update(&mut self, drag_allowed: bool, atlas: &Atlas) -> bool {
         if self.dragging {
-            let mouse_rel_position: glm::Vec2 = Mouse::position_rel();
+            let mouse_rel_position: glm::Vec2 = Mouse::position_delta();
             self.position.x += mouse_rel_position.x;
             self.position.y += mouse_rel_position.y;
         }
@@ -55,22 +43,23 @@ impl Window {
         }
 
         let mut size_x = self.size.x.max(PADDING * 2f32);
-        let mut size_y = HEADER_HEIGHT + PADDING * 2f32;
+        let mut size_y = HEADER_HEIGHT + PADDING;
         for widget_index in 0..self.widget_count {
             let widget = &self.widgets[widget_index];
+            size_y += widget.cursor_y_offset();
             match widget {
                 Widget::TEXT(str) => {
-                    const AVERAGE_GLYPH_WIDTH: f32 = 10f32;
-                    const AVERAGE_GLYPH_HEIGHT: f32 = 22f32;
-                    size_x = size_x.max(str.len() as f32 * AVERAGE_GLYPH_WIDTH);
-                    size_y += AVERAGE_GLYPH_HEIGHT;
-                }
-                Widget::BUTTON => {
-                    // TODO
+                    let str: String = str.to_string();
+                    let (w, _) = self.measure_text(&str, atlas);
+                    size_x = size_x.max(w + PADDING * 2f32);
                 }
                 Widget::TEXTURE(texture) => {
                     size_x = size_x.max(texture.width as f32 + PADDING * 2f32);
-                    size_y += texture.height as f32;
+                }
+                Widget::BUTTON(str, _) => {
+                    let str: String = str.to_string();
+                    let (w, _) = self.measure_text(&str, atlas);
+                    size_x = size_x.max(w + PADDING * 2f32);
                 }
                 Widget::NONE => {}
             }
@@ -113,25 +102,91 @@ impl Window {
         self.draw_text(self.title, batch, atlas);
 
         // Draw the rest of the widgets
+        // TODO: move draw into each Widget?
         self.cursor.x = PADDING;
         self.cursor.y = HEADER_HEIGHT + PADDING;
         for widget_index in 0..self.widget_count {
             let widget = &self.widgets[widget_index];
+            let y_offset = widget.cursor_y_offset();
             match widget {
                 Widget::TEXT(str) => self.draw_text(str, batch, atlas),
-                Widget::BUTTON => {}
+                Widget::BUTTON(str, color) => {
+                    const BUTTON_COLOR_HOVER: [u8; 4] = [14, 14, 14, 255];
+                    const BUTTON_COLOR_CLICK: [u8; 4] = [24, 24, 24, 255];
+                    let mouse_rel_position = Mouse::position_relative(self.position + self.cursor);
+                    let button_color = if mouse_rel_position.x >= 0f32
+                        && mouse_rel_position.x <= self.size.x - PADDING * 2f32
+                        && mouse_rel_position.y >= 0f32
+                        && mouse_rel_position.y <= BUTTON_HEIGHT
+                    {
+                        if Mouse::left_held() {
+                            Self::add_arrays(color, &BUTTON_COLOR_CLICK)
+                        } else {
+                            Self::add_arrays(color, &BUTTON_COLOR_HOVER)
+                        }
+                    } else {
+                        *color
+                    };
+
+                    // Draw button background
+                    batch.rect(
+                        [
+                            self.position.x + self.cursor.x,
+                            self.position.y + self.cursor.y,
+                            0f32,
+                        ],
+                        [self.size.x - PADDING * 2f32, BUTTON_HEIGHT],
+                        button_color,
+                    );
+
+                    // Draw button label (centered)
+                    let label: String = str.to_string();
+                    let (w, h) = self.measure_text(&label, atlas);
+                    self.cursor.x += (self.size.x - PADDING) / 2f32 - w / 2f32;
+                    self.cursor.y += BUTTON_HEIGHT / 2f32 - h / 2f32;
+                    self.draw_text(&label, batch, atlas);
+                    // Revert cursor to its orignal position
+                    self.cursor.x -= (self.size.x - PADDING) / 2f32 - w / 2f32;
+                    self.cursor.y -= BUTTON_HEIGHT / 2f32 - h / 2f32;
+                }
                 Widget::TEXTURE(texture) => {
                     batch.texture(texture.clone(), self.position + self.cursor);
-                    self.cursor += glm::vec2(0f32, texture.height as f32)
                 }
                 Widget::NONE => {}
             }
+
+            self.cursor.x = PADDING;
+            self.cursor.y += y_offset;
         }
     }
 
-    pub fn add_widget(&mut self, widget: Widget) {
+    /**
+     * The returned boolean is interpreted within context:
+     * Widget::Button -> Weather the button was clicked
+     */
+    pub fn add_widget(&mut self, widget: Widget) -> bool {
+        let mut clicked = false;
+        if Mouse::left_clicked() {
+            match widget {
+                Widget::BUTTON(_, _) => {
+                    // Calculate button position and detect hover/click
+                    let mut cursor_height = HEADER_HEIGHT + PADDING;
+                    for widget_index in 0..self.widget_count {
+                        let widget = &self.widgets[widget_index];
+                        cursor_height += widget.cursor_y_offset();
+                    }
+                    let mouse_position = Mouse::position_relative(self.position);
+                    clicked = mouse_position.x > 0f32
+                        && mouse_position.x < self.size.y
+                        && mouse_position.y >= cursor_height
+                        && mouse_position.y <= cursor_height + BUTTON_HEIGHT;
+                }
+                _ => (),
+            }
+        }
         self.widgets[self.widget_count] = widget;
         self.widget_count += 1;
+        clicked
     }
 
     // TODO: define a Rect interface or similar
@@ -140,6 +195,22 @@ impl Window {
             && mouse_position.x <= self.position.x + self.size.x
             && mouse_position.y >= self.position.y
             && mouse_position.y <= self.position.y + HEADER_HEIGHT
+    }
+
+    fn measure_text(&mut self, str: &str, atlas: &Atlas) -> (f32, f32) {
+        let start_cursor_x_position = self.cursor.x;
+        let mut glyph_height = 0f32;
+        let mut end_cursor_x_position = start_cursor_x_position;
+        for ch in str.chars() {
+            let (_, glyph) = atlas.get_glyph(ch);
+            end_cursor_x_position += glyph.x_advance as f32;
+            glyph_height = glyph_height.max((glyph.height as i16 + glyph.y_offset) as f32);
+        }
+
+        (
+            end_cursor_x_position - start_cursor_x_position,
+            glyph_height,
+        )
     }
 
     fn draw_text(&mut self, str: &str, batch: &mut Batch, atlas: &Atlas) {
@@ -154,5 +225,13 @@ impl Window {
 
             self.cursor.x += glyph.x_advance as f32;
         }
+    }
+
+    fn add_arrays(a: &[u8; 4], b: &[u8; 4]) -> [u8; 4] {
+        let mut result = [0u8; 4];
+        for i in 0..4 {
+            result[i] = a[i].saturating_add(b[i]);
+        }
+        result
     }
 }

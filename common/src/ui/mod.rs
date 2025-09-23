@@ -7,7 +7,9 @@ use crate::{
 };
 
 pub mod window;
+pub mod widget;
 
+// TODO: move this to GUI.rs
 const WINDOW_TO_WINDOW_PADDING: f32 = 8f32;
 const MAX_WINDOWS: usize = 8;
 static FONT_ATLAS: &[u8; 6516] =
@@ -63,7 +65,7 @@ impl Gui {
         // The most recently added window gets priority for input events (drawn on top).
         for i in (0..window_count).rev() {
             let window = &mut instance.windows[i];
-            let capture_drag = window.update(drag_allowed);
+            let capture_drag = window.update(drag_allowed, &instance.atlas);
             // If this window captured the drag, prevent underlying windows from dragging.
             // Once a window captures drag, drag_allowed remains false for remaining windows.
             drag_allowed = !capture_drag && drag_allowed;
