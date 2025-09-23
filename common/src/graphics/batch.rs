@@ -9,6 +9,7 @@ use crate::graphics::render_target::RenderTarget;
 use crate::graphics::subtexture::Subtexture;
 use crate::graphics::texture::Texture;
 use crate::graphics::{IDENTITY, Vertex};
+use crate::ui::widget::Widget;
 
 pub struct Batch {
     device: Device,
@@ -119,6 +120,7 @@ impl Batch {
         self.current_batch().elements += 1;
     }
 
+    // TODO: why is this taking a glm::2 as position (and not [f32;3])
     pub fn texture(&mut self, texture: Texture, position: glm::Vec2) {
         let mut current_batch = self.current_batch();
         match current_batch.texture.as_ref() {
@@ -391,7 +393,13 @@ impl Batch {
         self.vertices.clear();
         self.indices.clear();
         self.matrix_stack.clear();
-        // self.material_stack.clear();
+        self.material_stack.clear();
+    }
+
+    // TODO: This might not belong here add a function debug_batch(batch, window)?
+    pub fn debug(&self, window: &'static mut crate::ui::window::Window) {
+        window.add_widget(Widget::TEXT("Batch state:".into()));
+        window.add_widget(Widget::TEXT(format!("Draw count: {}", self.batches.len())));
     }
 }
 

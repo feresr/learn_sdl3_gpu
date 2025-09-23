@@ -13,6 +13,7 @@ use crate::game_state::{GameState, game_to_screen_projection};
 
 mod game_state;
 mod materials;
+mod room;
 
 extern crate nalgebra_glm as glm;
 
@@ -38,7 +39,6 @@ pub extern "C" fn update_game(
 
     let game_state: &mut GameState = unsafe { &mut *(game_memory.storage as *mut GameState) };
 
-    // TODO: Doing this every frame might be unnecessary, introduce game_memory.hot_reloaded or similar
     // TODO: Use this approach with Device?
     unsafe {
         KEYBOARD = keyboard as *const Keyboard;
@@ -54,26 +54,13 @@ pub extern "C" fn update_game(
         Mouse::position_projected(&game_to_screen_projection.try_inverse().unwrap());
 
     {
-        let window = Gui::window("Game Offscreen Target");
-        window.add_widget(Widget::TEXTURE(game_state.game_target.color()));
-        window.add_widget(Widget::TEXT("Example test text 123456789"));
-        if window.add_widget(Widget::BUTTON("Click me!",[80, 29, 175, 255] )) {
-            println!("button A clicked")
-        }
-        if window.add_widget(Widget::BUTTON("A very long button label", [48, 148, 255, 255])) {
-            println!("button B clicked")
-        }
-        window.add_widget(Widget::TEXT("You can drag this window around!"));
-    }
-
-    {
         let window = Gui::window("Mouse data");
         game_state.dummy_string.clear();
         game_state.dummy_string.push_str(&format!(
             "Position x:{:.1} y:{:.1}",
             mouse_position.x, mouse_position.y
         ));
-        window.add_widget(Widget::TEXT(&game_state.dummy_string));
+        window.add_widget(Widget::TEXT(game_state.dummy_string.clone()));
     }
 
     if Keyboard::held(Keycode::A) {
@@ -85,6 +72,12 @@ pub extern "C" fn update_game(
 
     // Draw to low-res off-screen game target
     {
+        // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
+        for (x, y, _) in &game_state.room.foreground_tiles {
+            let sprite = game_state.atlas.get(y as u16 % 3, (x + y) as u16 % 3);
+            batch.subtexture(sprite, glm::vec2(x as f32 * 8f32, y as f32 * 8f32));
+        }
+
         batch.push_material(&game_state.material);
 
         batch.circle(
@@ -98,10 +91,19 @@ pub extern "C" fn update_game(
         );
         batch.pop_material();
 
-        batch.texture(game_state.dummy_texture.clone(), game_state.dummy_position);
-        batch.subtexture(game_state.dummy_subtexture.clone(), glm::vec2(0f32, 0f32));
-
         batch.draw_into(&game_state.game_target);
+
+        // Add debug informatoin
+        {
+            let window = Gui::window("Game Offscreen Target");
+            window.add_widget(Widget::TEXT("Example test text 123456789".to_string()));
+            if window.add_widget(Widget::BUTTON("Click me!", [80, 29, 175, 255])) {
+                game_state.dummy_bool = !game_state.dummy_bool;
+            }
+            window.add_widget(Widget::TEXTURE(game_state.game_target.color()));
+            batch.debug(window);
+        }
+
         batch.clear();
     }
 
@@ -117,9 +119,13 @@ pub extern "C" fn update_game(
             [255, 255, 255, 255],
         );
 
+        let window = Gui::window("Screen Draw");
+        batch.debug(window);
+
         Gui::draw(batch);
 
         batch.draw_into(&screen_target);
         batch.clear();
     }
+    // game_state.arena.reset();
 }

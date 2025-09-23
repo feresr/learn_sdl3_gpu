@@ -3,11 +3,11 @@ use sdl3::gpu::Device;
 use crate::{
     graphics::{batch::Batch, texture::Texture},
     ui::window::Window,
-    utils::{atlas::Atlas, glyph::GlyphData},
+    utils::{glyph::GlyphData, font_atlas::FontAtlas},
 };
 
-pub mod window;
 pub mod widget;
+pub mod window;
 
 // TODO: move this to GUI.rs
 const WINDOW_TO_WINDOW_PADDING: f32 = 8f32;
@@ -20,15 +20,15 @@ static FONT_GLYPH_DATA_FNT: &'static str =
 pub struct Gui {
     windows: [Window; MAX_WINDOWS],
     window_count: usize,
-    atlas: Atlas,
-    arrange_windows: bool, // Arrange windows side by side on first draw 
+    atlas: FontAtlas,
+    arrange_windows: bool, // Arrange windows side by side on first draw
 }
 
 impl Gui {
     pub fn new(device: Device) -> Self {
         let texture_atlas = Texture::from_bytes(device, FONT_ATLAS);
         let glyph_data = GlyphData::from_fnt_file(FONT_GLYPH_DATA_FNT);
-        let atlas = Atlas::new(texture_atlas, glyph_data);
+        let atlas = FontAtlas::new(texture_atlas, glyph_data);
         Self {
             windows: Default::default(),
             window_count: Default::default(),

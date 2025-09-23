@@ -1,24 +1,24 @@
-use crate::materials;
+use crate::{materials, room::Room};
 use common::{
-    Device, Rect, TextureFormat,
-    graphics::{
-        IDENTITY, material::Material, render_target::RenderTarget, subtexture::Subtexture,
-        texture::Texture,
-    },
+    Device, TextureFormat,
+    graphics::{IDENTITY, material::Material, render_target::RenderTarget, texture::Texture},
     ui::Gui,
+    utils::texture_atlas::TextureAtlas,
 };
 
-static FOO: &[u8; 402] =
+static ATLAS: &[u8; 402] =
     include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/atlas.png");
 
 pub struct GameState {
     pub material: Material,
     pub game_target: RenderTarget,
-    pub dummy_texture: Texture,
-    pub dummy_subtexture: Subtexture,
     pub dummy_position: glm::Vec2,
     pub dummy_string: String,
+    pub dummy_bool: bool,
     pub gui: Gui,
+    // pub arena: Arena<128>, TODO: needed?
+    pub room: Room,
+    pub atlas: TextureAtlas,
 }
 
 impl GameState {
@@ -30,16 +30,19 @@ impl GameState {
             TextureFormat::R8g8b8a8Unorm,
         ));
 
-        let dummy_texture = Texture::from_bytes(device.clone(), FOO);
-        let dummy_subtexture = Subtexture::new(dummy_texture.clone(), Rect::new(8, 8, 8, 8));
+        let atlas_texture = Texture::from_bytes(device.clone(), ATLAS);
+        let atlas = TextureAtlas::new(atlas_texture, 8);
+
         GameState {
             material: Material::from_specification(device.clone(), &materials::RED_MATERIAL),
             game_target: offscreen_target,
-            dummy_texture,
-            dummy_subtexture,
             dummy_position: glm::Vec2::default(),
             dummy_string: Default::default(),
+            dummy_bool: false,
             gui: Gui::new(device.clone()),
+            // arena: Default::default(),
+            room: Room::new(),
+            atlas,
         }
     }
 }
@@ -72,6 +75,8 @@ pub fn create_game_to_screen_target_projection(
     return create_transform(screen_center, game_center, glm::vec2(scale, scale));
 }
 
+// TODO: Dead code
+#[allow(dead_code)]
 pub fn apply_transform_inplace(
     mut mat: glm::Mat4,
     position: glm::Vec2,

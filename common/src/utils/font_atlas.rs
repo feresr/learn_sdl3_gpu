@@ -5,14 +5,17 @@ use crate::{
     utils::glyph::{Glyph, GlyphData},
 };
 
-pub struct Atlas {
+pub struct FontAtlas {
     texture: Texture,
     glyph_data: GlyphData,
 }
 
-impl Atlas {
-    pub fn new(texture: Texture, glyph_data : GlyphData) -> Self {
-        Atlas { texture, glyph_data }
+impl FontAtlas {
+    pub fn new(texture: Texture, glyph_data: GlyphData) -> Self {
+        FontAtlas {
+            texture,
+            glyph_data,
+        }
     }
 
     pub fn get_glyph(&self, glyph: char) -> (Subtexture, &Glyph) {

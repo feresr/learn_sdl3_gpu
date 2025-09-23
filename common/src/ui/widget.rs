@@ -4,8 +4,8 @@ const AVERAGE_GLYPH_HEIGHT: f32 = 26f32;
 pub(crate) const BUTTON_HEIGHT: f32 = 36f32;
 
 pub enum Widget {
-    TEXT(&'static str),
-    BUTTON(&'static str, [u8;4]),
+    TEXT(String),
+    BUTTON(&'static str, [u8; 4]),
     TEXTURE(Texture),
     NONE,
 }

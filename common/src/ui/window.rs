@@ -2,7 +2,7 @@ use crate::{
     graphics::batch::Batch,
     input::mouse::Mouse,
     ui::widget::{BUTTON_HEIGHT, Widget},
-    utils::atlas::Atlas,
+    utils::font_atlas::FontAtlas,
 };
 
 const MAX_WIDGETS: usize = 6;
@@ -25,7 +25,7 @@ impl Window {
     /**
      * Returns true if this window has (or is about to) captured the drag gesture.
      */
-    pub(crate) fn update(&mut self, drag_allowed: bool, atlas: &Atlas) -> bool {
+    pub(crate) fn update(&mut self, drag_allowed: bool, atlas: &FontAtlas) -> bool {
         if self.dragging {
             let mouse_rel_position: glm::Vec2 = Mouse::position_delta();
             self.position.x += mouse_rel_position.x;
@@ -75,7 +75,7 @@ impl Window {
         self.cursor.scale_mut(0f32);
     }
 
-    pub(crate) fn draw(&mut self, batch: &mut Batch, atlas: &Atlas) {
+    pub(crate) fn draw(&mut self, batch: &mut Batch, atlas: &FontAtlas) {
         // Draw Background
         const BACKGROUND_COLOR: [u8; 4] = [44, 44, 54, 255];
         batch.rect(
@@ -109,7 +109,7 @@ impl Window {
             let widget = &self.widgets[widget_index];
             let y_offset = widget.cursor_y_offset();
             match widget {
-                Widget::TEXT(str) => self.draw_text(str, batch, atlas),
+                Widget::TEXT(str) => self.draw_text(&str.clone(), batch, atlas),
                 Widget::BUTTON(str, color) => {
                     const BUTTON_COLOR_HOVER: [u8; 4] = [14, 14, 14, 255];
                     const BUTTON_COLOR_CLICK: [u8; 4] = [24, 24, 24, 255];
@@ -197,7 +197,7 @@ impl Window {
             && mouse_position.y <= self.position.y + HEADER_HEIGHT
     }
 
-    fn measure_text(&mut self, str: &str, atlas: &Atlas) -> (f32, f32) {
+    fn measure_text(&mut self, str: &str, atlas: &FontAtlas) -> (f32, f32) {
         let start_cursor_x_position = self.cursor.x;
         let mut glyph_height = 0f32;
         let mut end_cursor_x_position = start_cursor_x_position;
@@ -213,7 +213,7 @@ impl Window {
         )
     }
 
-    fn draw_text(&mut self, str: &str, batch: &mut Batch, atlas: &Atlas) {
+    fn draw_text(&mut self, str: &str, batch: &mut Batch, atlas: &FontAtlas) {
         for ch in str.chars() {
             let (sprite, glyph) = atlas.get_glyph(ch);
             batch.subtexture(

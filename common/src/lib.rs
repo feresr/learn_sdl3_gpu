@@ -3,6 +3,7 @@ pub mod graphics;
 pub mod input;
 pub mod ui;
 pub mod utils;
+pub mod memory;
 
 pub use sdl3::gpu::Device;
 pub use sdl3::gpu::TextureFormat;
