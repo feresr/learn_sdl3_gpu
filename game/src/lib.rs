@@ -12,6 +12,7 @@ use common::{
 use crate::game::{Game, game_to_screen_projection};
 
 mod game;
+mod editor;
 mod materials;
 mod room;
 
@@ -57,6 +58,7 @@ pub extern "C" fn update_game(
         }
     }
 
+    Gui::update(); // Detect input before anything else
     game.update();
 
     // Draw to low-res off-screen game target

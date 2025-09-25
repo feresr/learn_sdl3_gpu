@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use sdl3::mouse::MouseButton;
 
 #[derive(Default, Debug)]
@@ -5,10 +7,12 @@ pub struct Mouse {
     position: glm::Vec2,
     wheel: glm::Vec2,
     position_delta: glm::Vec2,
-    left: bool,
-    right: bool,
-    left_held: bool,
-    right_held: bool,
+    // Cell: Mouse is immutable from .dll perspective (game should not update input) but,
+    // consume_click() needs to set this to false to avoid further event propagation.
+    left: Cell<bool>,
+    right: Cell<bool>,
+    left_held: Cell<bool>,
+    right_held: Cell<bool>,
 }
 
 impl Mouse {
@@ -18,16 +22,28 @@ impl Mouse {
 
     // Getters
     pub fn left_clicked() -> bool {
-        Self::get().left
+        Self::get().left.get()
     }
+
     pub fn left_held() -> bool {
-        Self::get().left_held
+        Self::get().left_held.get()
     }
     pub fn right_clicked() -> bool {
-        Self::get().right
+        Self::get().right.get()
     }
     pub fn right_held() -> bool {
-        Self::get().right_held
+        Self::get().right_held.get()
+    }
+
+    /**
+     * Prevents this event from propagating further.
+     */
+    pub fn consume_left() {
+        Mouse::get().left.set(false);
+    }
+
+    pub fn consume_right() {
+        Mouse::get().right.set(false);
     }
 
     pub fn position() -> glm::Vec2 {
@@ -57,12 +73,12 @@ impl Mouse {
     pub fn mouse_button_down(&mut self, button: MouseButton) {
         match button {
             MouseButton::Left => {
-                self.left = true;
-                self.left_held = true;
+                self.left.set(true);
+                self.left_held.set(true);
             }
             MouseButton::Right => {
-                self.right = true;
-                self.right_held = true;
+                self.right.set(true);
+                self.right_held.set(true);
             }
             _ => {}
         }
@@ -76,12 +92,12 @@ impl Mouse {
     pub fn mouse_button_up(&mut self, button: MouseButton) {
         match button {
             MouseButton::Left => {
-                self.left = false;
-                self.left_held = false;
+                self.left.set(false);
+                self.left_held.set(false);
             }
             MouseButton::Right => {
-                self.right = false;
-                self.right_held = false;
+                self.right.set(false);
+                self.right_held.set(false);
             }
             _ => {}
         }
@@ -96,7 +112,7 @@ impl Mouse {
 
     /**
      * The relative position is only valid for one frame
-     * If the mouse does not move from frame 0 to frame 1 no MotionEvent will trigger...
+     * If the mouse does not move from frame 0 to frame 1 no MotionEvent will trigger.
      * Which means no Mouse.set_position(x, y, xrel, yrel) invokation.
      * Therefore, we need to clear this manually at the end of the frame.
      */
@@ -105,8 +121,8 @@ impl Mouse {
     }
 
     pub fn clear_button_pressed(&mut self) {
-        self.left = false;
-        self.right = false;
+        self.left.set(false);
+        self.right.set(false);
     }
 }
 

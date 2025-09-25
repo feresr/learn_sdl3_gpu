@@ -3,7 +3,7 @@ use sdl3::gpu::Device;
 use crate::{
     graphics::{batch::Batch, texture::Texture},
     ui::window::Window,
-    utils::{glyph::GlyphData, font_atlas::FontAtlas},
+    utils::{font_atlas::FontAtlas, glyph::GlyphData},
 };
 
 pub mod widget;
@@ -53,23 +53,60 @@ impl Gui {
         window
     }
 
-    pub fn draw(batch: &mut Batch) {
+    /**
+     * This method acts on the previous frame state.
+     * (1-frame behind to detect input before anything else in the game)
+     * 
+     * 1. Gui::update() is called at the begginig of the frame to detect user inputs and capture clicks, then clears all windows.
+     * 2. game.update() adds new windows + widgets as needed (window.add_widget(..)) checks for click (none on the first frame)
+     * 3. Gui::draw() renders windows at the end of the frame.
+     * 
+     * Example:
+     *
+     * -- FRAME 1 --- 
+     * 1. Update: On the very first pass, there will be no windows to update. No windows to clear           [ ]
+     * 2. The game adds window A with widget B -> checks for click -> no click detected                     [A]
+     * 3. Windows are drawn.                                                                                [A]
+     * -- frame 2 --- (user clicks on widget)
+     * 4. Update: We detect window clicks and store click x,y. Clear Window A                               [A(click x,y)]
+     * 5. The game adds window A with widget B -> checks for click -> click detected!                       [A(click x,y)]
+     * 6. Windows are drawn again (clicks are cleared )                                                     [A]
+     * -- FRAME 3 ---
+     * 7. Update, Detext clicks, clear windows                                                              [ ]
+     * 8. The game adds window A with widget B -> checks for click -> no click detectd                      [A]
+     * 
+     */
+    pub fn update() {
         let instance = Self::get();
         let window_count = instance.window_count;
 
-        // Only one window can be dragged at a time.
-        let mut drag_allowed = true;
+        // Iterate backwards (from foreground to background) to detect hover/drag inputs.
+        // The most recently added window gets priority for input events (drawn on top).
+        for i in (0..window_count).rev() {
+            let window = &mut instance.windows[i];
+            window.update(&instance.atlas);
+        }
+
+        // Iterate forwards (from background to foreground) to draw the windows.
+        // The most recently added window is drawn last, appearing on top of others.
+        for i in 0..window_count {
+            let window = &mut instance.windows[i];
+            window.clear();
+        }
+        instance.window_count = 0;
+    }
+
+    pub fn draw(batch: &mut Batch) {
+        let instance = Self::get();
+        let window_count = instance.window_count;
 
         let mut window_layout_cursor_x = 0f32;
         // Iterate backwards (from foreground to background) to detect hover/drag inputs.
         // The most recently added window gets priority for input events (drawn on top).
         for i in (0..window_count).rev() {
             let window = &mut instance.windows[i];
-            let capture_drag = window.update(drag_allowed, &instance.atlas);
-            // If this window captured the drag, prevent underlying windows from dragging.
-            // Once a window captures drag, drag_allowed remains false for remaining windows.
-            drag_allowed = !capture_drag && drag_allowed;
-
+            // TODO: should the moving window be brought to the foreground
+            // window.update(&instance.atlas);
             if instance.arrange_windows {
                 window.position.x = window_layout_cursor_x;
                 window_layout_cursor_x += window.size.x + WINDOW_TO_WINDOW_PADDING;
@@ -84,10 +121,8 @@ impl Gui {
         for i in 0..window_count {
             let window = &mut instance.windows[i];
             window.draw(batch, &instance.atlas);
-            window.clear();
+            // window.clear();
         }
-
-        instance.window_count = 0;
     }
 }
 

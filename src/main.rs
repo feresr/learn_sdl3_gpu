@@ -6,6 +6,7 @@ use common::input::mouse::Mouse;
 use sdl3::event::{Event, WindowEvent};
 use sdl3::gpu::ShaderFormat;
 use sdl3::keyboard::Keycode;
+use std::process::Command;
 use std::time::{Duration, Instant};
 
 extern crate nalgebra_glm as glm;
@@ -72,9 +73,18 @@ fn main() {
                     keycode: Some(Keycode::R),
                     ..
                 } => {
+                    // Compile the dll
                     // Hot-reload the game .dll
-                    println!("Game DLL reloaded");
-                    gamedll = GameDll::load();
+                    let result = compile_dll_in_dir("/Users/feresr/Workspace/learn_sdl3_gpu/game");
+                    match result {
+                        Ok(_) => {
+                            println!("Game DLL reloaded");
+                            gamedll = GameDll::load();
+                        }
+                        Err(e) => {
+                            eprintln!("Could not recompile game.dll: {}", e);
+                        }
+                    }
                 }
                 Event::KeyDown {
                     keycode: Some(kc), ..
@@ -128,5 +138,22 @@ fn main() {
                 std::hint::spin_loop();
             }
         }
+    }
+
+    fn compile_dll_in_dir(project_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let output = Command::new("cargo")
+            .arg("build")
+            // .arg("--release") // TODO
+            .current_dir(project_path) // Set working directory
+            .output()?;
+
+        if !output.status.success() {
+            eprintln!("Cargo build failed:");
+            eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+            return Err("Build failed".into());
+        }
+
+        println!("Build successful!");
+        Ok(())
     }
 }

@@ -5,7 +5,7 @@ use crate::{
     utils::font_atlas::FontAtlas,
 };
 
-const MAX_WIDGETS: usize = 6;
+const MAX_WIDGETS: usize = 12;
 pub(crate) const PADDING: f32 = 8f32;
 pub(crate) const HEADER_HEIGHT: f32 = 32f32;
 
@@ -14,8 +14,9 @@ pub struct Window {
     pub position: glm::Vec2,
     pub(crate) size: glm::Vec2,
     pub title: &'static str,
+    click: Option<(f32, f32)>,
     dragging: bool,
-    hovering: bool,
+    hovering_header: bool,
     cursor: glm::Vec2, // Relative to position
     widgets: [Widget; MAX_WIDGETS],
     widget_count: usize,
@@ -24,8 +25,9 @@ pub struct Window {
 impl Window {
     /**
      * Returns true if this window has (or is about to) captured the drag gesture.
+     * This is invoked at the very start of the frame.
      */
-    pub(crate) fn update(&mut self, drag_allowed: bool, atlas: &FontAtlas) -> bool {
+    pub(crate) fn update(&mut self, atlas: &FontAtlas) {
         if self.dragging {
             let mouse_rel_position: glm::Vec2 = Mouse::position_delta();
             self.position.x += mouse_rel_position.x;
@@ -36,10 +38,18 @@ impl Window {
             self.dragging = false;
         }
 
-        // !drag_allowed means another window is dragging (or about to) do not hover this window
-        self.hovering = drag_allowed && self.is_hovering(Mouse::position());
+        self.hovering_header = self.is_hovering_header(Mouse::position());
+
         if Mouse::left_clicked() {
-            self.dragging = self.hovering;
+            self.dragging = self.hovering_header;
+            // Caputure this click (and store it in self.click for future handling)
+            if self.is_hovering_window(Mouse::position()) {
+                let mouse_position = Mouse::position_relative(self.position);
+                // Save this click for future handling (on add_widget(..))
+                self.click = Some((mouse_position.x, mouse_position.y));
+                // Prevent underlying content (game or another window) from interaacting
+                Mouse::consume_left();
+            }
         }
 
         let mut size_x = self.size.x.max(PADDING * 2f32);
@@ -56,6 +66,9 @@ impl Window {
                 Widget::TEXTURE(texture) => {
                     size_x = size_x.max(texture.width as f32 + PADDING * 2f32);
                 }
+                Widget::SPRITE(subtexture) => {
+                    size_x = size_x.max(subtexture.rect.w as f32 + PADDING * 2f32);
+                }
                 Widget::BUTTON(str, _) => {
                     let str: String = str.to_string();
                     let (w, _) = self.measure_text(&str, atlas);
@@ -66,8 +79,6 @@ impl Window {
         }
         self.size.x = size_x;
         self.size.y = size_y;
-
-        drag_allowed && self.hovering
     }
 
     pub(crate) fn clear(&mut self) {
@@ -76,6 +87,8 @@ impl Window {
     }
 
     pub(crate) fn draw(&mut self, batch: &mut Batch, atlas: &FontAtlas) {
+        self.click = None;
+
         // Draw Background
         const BACKGROUND_COLOR: [u8; 4] = [44, 44, 54, 255];
         batch.rect(
@@ -87,7 +100,7 @@ impl Window {
         // Draw Header
         const HEADER_COLOR: [u8; 4] = [0, 0, 0, 255];
         const HEADER_COLOR_HOVER: [u8; 4] = [64, 64, 64, 255];
-        let header_color = if self.hovering {
+        let header_color = if self.hovering_header {
             HEADER_COLOR_HOVER
         } else {
             HEADER_COLOR
@@ -152,6 +165,10 @@ impl Window {
                 Widget::TEXTURE(texture) => {
                     batch.texture(texture.clone(), self.position + self.cursor);
                 }
+                Widget::SPRITE(subtexture) => {
+                    // TODO: Rename SPRITE to SUBTEXTURE?
+                    batch.subtexture(subtexture.clone(), self.position + self.cursor);
+                }
                 Widget::NONE => {}
             }
 
@@ -161,40 +178,39 @@ impl Window {
     }
 
     /**
-     * The returned boolean is interpreted within context:
-     * Widget::Button -> Weather the button was clicked
+     * Returs true if the user is clicking on this widget
      */
     pub fn add_widget(&mut self, widget: Widget) -> bool {
         let mut clicked = false;
-        if Mouse::left_clicked() {
-            match widget {
-                Widget::BUTTON(_, _) => {
-                    // Calculate button position and detect hover/click
-                    let mut cursor_height = HEADER_HEIGHT + PADDING;
-                    for widget_index in 0..self.widget_count {
-                        let widget = &self.widgets[widget_index];
-                        cursor_height += widget.cursor_y_offset();
-                    }
-                    let mouse_position = Mouse::position_relative(self.position);
-                    clicked = mouse_position.x > 0f32
-                        && mouse_position.x < self.size.y
-                        && mouse_position.y >= cursor_height
-                        && mouse_position.y <= cursor_height + BUTTON_HEIGHT;
-                }
-                _ => (),
+        if let Some((click_x, click_y)) = self.click {
+            let mut cursor_height = HEADER_HEIGHT + PADDING;
+            for widget_index in 0..self.widget_count {
+                let widget = &self.widgets[widget_index];
+                cursor_height += widget.cursor_y_offset();
             }
+            clicked = click_x > 0f32
+                && click_x < self.size.x
+                && click_y >= cursor_height
+                && click_y <= cursor_height + widget.cursor_y_offset();
         }
+
         self.widgets[self.widget_count] = widget;
         self.widget_count += 1;
         clicked
     }
 
     // TODO: define a Rect interface or similar
-    fn is_hovering(&self, mouse_position: glm::Vec2) -> bool {
+    fn is_hovering_header(&self, mouse_position: glm::Vec2) -> bool {
         mouse_position.x >= self.position.x
             && mouse_position.x <= self.position.x + self.size.x
             && mouse_position.y >= self.position.y
             && mouse_position.y <= self.position.y + HEADER_HEIGHT
+    }
+    fn is_hovering_window(&self, mouse_position: glm::Vec2) -> bool {
+        mouse_position.x >= self.position.x
+            && mouse_position.x <= self.position.x + self.size.x
+            && mouse_position.y >= self.position.y
+            && mouse_position.y <= self.position.y + self.size.y
     }
 
     fn measure_text(&mut self, str: &str, atlas: &FontAtlas) -> (f32, f32) {

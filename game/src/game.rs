@@ -1,11 +1,11 @@
-use crate::{SCREEN_TO_GAME_PROJECTION, materials, room::Room};
+use crate::{SCREEN_TO_GAME_PROJECTION, editor::Editor, materials, room::Room};
 use common::{
     Device, TextureFormat,
     graphics::{
         IDENTITY, batch::Batch, material::Material, render_target::RenderTarget, texture::Texture,
     },
     input::mouse::Mouse,
-    ui::Gui,
+    ui::{Gui, widget::Widget},
     utils::texture_atlas::TextureAtlas,
 };
 
@@ -19,6 +19,7 @@ pub struct Game {
     pub gui: Gui,
     // pub arena: Arena<128>, TODO: needed?
     pub room: Room,
+    pub editor: Editor,
     pub atlas: TextureAtlas,
 }
 
@@ -40,37 +41,56 @@ impl Game {
             dummy_bool: false,
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
+            editor: Default::default(),
             room: Room::new(),
             atlas,
         }
     }
 
     pub(crate) fn update(&mut self) {
+        let game_mouse_position = Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
 
+        let window = Gui::window("Game");
+        window.add_widget(common::ui::widget::Widget::TEXT(format!(
+            "Mouse game position: x:{} y:{}",
+            game_mouse_position.x.floor(),
+            game_mouse_position.y.floor()
+        )));
+        window.add_widget(common::ui::widget::Widget::TEXT(
+            "Press 'R' to hot-reload the game dll.".to_string(),
+        ));
+
+        if self.editor.showing {
+            self.editor.update(&mut self.room, &self.atlas);
+        } else {
+            self.room.update(&self.atlas);
+            if window.add_widget(Widget::BUTTON("Edit Room", [20, 132, 23, 255])) {
+                self.editor.showing = true;
+            }
+        }
     }
 
     pub(crate) fn render(&self, batch: &mut Batch) {
-        let game_mouse_position = Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
-
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
-        self.room.render(batch, &self.atlas);
+        if self.editor.showing {
+            self.editor.render(batch, &self.room, &self.atlas);
+        } else {
+            self.room.render(batch, &self.atlas);
 
-        Gui::window("Game mouse position").add_widget(common::ui::widget::Widget::TEXT(format!(
-            "{} {}",
-            game_mouse_position.x, game_mouse_position.y
-        )));
-
-        batch.push_material(&self.material);
-        batch.circle(
-            [
-                game_mouse_position.x as i32 as f32,
-                game_mouse_position.y as i32 as f32,
-            ],
-            14.0f32,
-            54,
-            [255, 255, 255, 255],
-        );
-        batch.pop_material();
+            let game_mouse_position =
+                &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
+            batch.push_material(&self.material);
+            batch.circle(
+                [
+                    game_mouse_position.x as i32 as f32,
+                    game_mouse_position.y as i32 as f32,
+                ],
+                14.0f32,
+                54,
+                [255, 255, 255, 255],
+            );
+            batch.pop_material();
+        }
     }
 }
 
