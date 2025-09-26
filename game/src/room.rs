@@ -1,7 +1,8 @@
-use common::utils::texture_atlas::TextureAtlas;
+use std::io::Write;
 
+use common::{utils::texture_atlas::TextureAtlas, IOStream};
 
-pub const TILE_SIZE : usize = 8;
+pub const TILE_SIZE: usize = 8;
 pub const TILES_PER_ROW: usize = 40;
 pub const TILES_PER_COLUMN: usize = 24;
 pub const TILE_COUNT: usize = (TILES_PER_ROW * TILES_PER_COLUMN) as usize;
@@ -18,6 +19,8 @@ pub const TILE_COUNT: usize = (TILES_PER_ROW * TILES_PER_COLUMN) as usize;
 // entities (survive room swap, bubble)
 
 // note: room might be doing too much? perhaps add an extra layer
+const ROOM_BYTES: &[u8; 1920] =
+    include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/level");
 
 pub struct Room {
     // TODO: pub background_tiles: Tiles,
@@ -26,22 +29,45 @@ pub struct Room {
 
 impl Room {
     pub fn new() -> Self {
+        let mut tiles_array = [Tile::default(); TILE_COUNT];
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                ROOM_BYTES.as_ptr(),
+                tiles_array.as_mut_ptr() as *mut u8,
+                ROOM_BYTES.len(),
+            );
+        }
         Room {
             // background_tiles: Default::default(),
-            foreground_tiles: Default::default(),
+            foreground_tiles: Tiles { inner: tiles_array },
         }
     }
 
-    pub(crate) fn update(&mut self, _atlas: &TextureAtlas) {
-        
-    }
+    pub(crate) fn update(&mut self, _atlas: &TextureAtlas) {}
 
     pub(crate) fn render(&self, batch: &mut common::graphics::batch::Batch, atlas: &TextureAtlas) {
         for (x, y, tile) in &self.foreground_tiles {
+            if !tile.visible {
+                continue;
+            }
             let sprite = atlas.get_index(tile.id.into());
-            batch.subtexture(sprite, glm::vec2(x as f32 * TILE_SIZE as f32, y as f32 * TILE_SIZE as f32));
+            batch.subtexture(
+                sprite,
+                glm::vec2(x as f32 * TILE_SIZE as f32, y as f32 * TILE_SIZE as f32),
+            );
         }
+    }
 
+    pub fn save(&self) {
+        let path = "/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/level";
+        let mut io = IOStream::from_file(path, "wb").unwrap();
+        let bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                self.foreground_tiles.inner.as_ptr() as *const u8,
+                std::mem::size_of_val(&self.foreground_tiles.inner),
+            )
+        };
+        io.write(bytes).unwrap();
     }
 }
 
@@ -57,8 +83,8 @@ impl Tiles {
 
 #[derive(Default, Clone, Copy)]
 pub struct Tile {
-    pub id: u16,
-    pub atlas: (u16, u16),
+    pub id: u8,
+    pub visible: bool,
 }
 
 impl Default for Tiles {

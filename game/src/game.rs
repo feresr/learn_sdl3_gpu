@@ -5,7 +5,7 @@ use common::{
         IDENTITY, batch::Batch, material::Material, render_target::RenderTarget, texture::Texture,
     },
     input::mouse::Mouse,
-    ui::{Gui, widget::Widget},
+    ui::{gui::Gui, widget::Widget},
     utils::texture_atlas::TextureAtlas,
 };
 
@@ -15,7 +15,6 @@ static ATLAS: &[u8; 402] =
 pub struct Game {
     pub material: Material,
     pub game_target: RenderTarget,
-    pub dummy_bool: bool,
     pub gui: Gui,
     // pub arena: Arena<128>, TODO: needed?
     pub room: Room,
@@ -38,7 +37,6 @@ impl Game {
         Game {
             material: Material::from_specification(device.clone(), &materials::RED_MATERIAL),
             game_target: offscreen_target,
-            dummy_bool: false,
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
             editor: Default::default(),
@@ -51,12 +49,12 @@ impl Game {
         let game_mouse_position = Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
 
         let window = Gui::window("Game");
-        window.add_widget(common::ui::widget::Widget::TEXT(format!(
+        window.add_widget(common::ui::widget::Widget::Text(format!(
             "Mouse game position: x:{} y:{}",
             game_mouse_position.x.floor(),
             game_mouse_position.y.floor()
         )));
-        window.add_widget(common::ui::widget::Widget::TEXT(
+        window.add_widget(common::ui::widget::Widget::Text(
             "Press 'R' to hot-reload the game dll.".to_string(),
         ));
 
@@ -64,7 +62,7 @@ impl Game {
             self.editor.update(&mut self.room, &self.atlas);
         } else {
             self.room.update(&self.atlas);
-            if window.add_widget(Widget::BUTTON("Edit Room", [20, 132, 23, 255])) {
+            if window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255])) {
                 self.editor.showing = true;
             }
         }

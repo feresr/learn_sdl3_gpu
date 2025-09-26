@@ -6,13 +6,16 @@ use common::{
         keyboard::{KEYBOARD, Keyboard},
         mouse::{MOUSE, Mouse},
     },
-    ui::{GUI, Gui, widget::Widget},
+    ui::{
+        gui::{GUI, Gui},
+        widget::Widget,
+    },
 };
 
 use crate::game::{Game, game_to_screen_projection};
 
-mod game;
 mod editor;
+mod game;
 mod materials;
 mod room;
 
@@ -69,14 +72,10 @@ pub extern "C" fn update_game(
 
         // Add debug informatoin
         {
-            let window = Gui::window("Game Offscreen Target");
-            window.add_widget(Widget::TEXT("Example test text 123456789".to_string()));
-            if window.add_widget(Widget::BUTTON("Click me!", [80, 29, 175, 255])) {
-                game.dummy_bool = !game.dummy_bool;
-            }
-            window.add_widget(Widget::TEXTURE(game.game_target.color()));
-            window.add_widget(Widget::TEXT("Batch state:".into()));
-            window.add_widget(Widget::TEXT(format!("Draw count: {}", draw_count)));
+            let window = Gui::window("Offscreen targets");
+            window.set_direction(common::ui::utils::Direction::Vertical);
+            window.add_widget(Widget::Texture(game.game_target.color()));
+            window.add_widget(Widget::Text(format!("Draw calls: {}", draw_count)));
         }
 
         batch.clear();
