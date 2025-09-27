@@ -36,6 +36,7 @@ impl Gui {
         unsafe { &mut *GUI }
     }
 
+    // TODO: Make windows minimize when tapping header (show no body)
     pub fn window(title: &'static str) -> &'static mut Window {
         let instance = Self::get();
 
@@ -105,7 +106,7 @@ impl Gui {
         // The most recently added window is drawn last, appearing on top of others.
         for i in 0..window_count {
             let window = &mut instance.windows[i];
-                window.draw(batch, &instance.atlas);
+            window.draw(batch, &instance.atlas);
         }
     }
 }
