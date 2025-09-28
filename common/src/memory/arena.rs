@@ -26,7 +26,7 @@ impl<const N: usize> Arena<N> {
             &mut *typed_ptr
         }
     }
-
+    
     /// Allocates raw memory with the given layout
     fn alloc_layout(&mut self, layout: Layout) -> *mut u8 {
         let size = layout.size();

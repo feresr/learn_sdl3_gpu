@@ -17,7 +17,9 @@ use crate::game::{Game, game_to_screen_projection};
 mod editor;
 mod game;
 mod materials;
+mod player;
 mod room;
+mod grid;
 
 extern crate nalgebra_glm as glm;
 
@@ -89,8 +91,8 @@ pub extern "C" fn update_game(
         batch.pop_matrix();
         batch.circle(
             [mouse_position.x, mouse_position.y],
-            10.0f32,
-            54,
+            2.0f32,
+            5,
             [255, 255, 255, 255],
         );
 

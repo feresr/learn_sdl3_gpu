@@ -1,22 +1,24 @@
 use std::io::Write;
 
-use common::{utils::texture_atlas::TextureAtlas, IOStream};
+use common::{IOStream, Rect, utils::texture_atlas::TextureAtlas};
+
+use crate::grid::Grid;
 
 pub const TILE_SIZE: usize = 8;
-pub const TILES_PER_ROW: usize = 40;
-pub const TILES_PER_COLUMN: usize = 24;
-pub const TILE_COUNT: usize = (TILES_PER_ROW * TILES_PER_COLUMN) as usize;
+pub const COLUMNS: usize = 40;
+pub const ROWS: usize = 24;
+pub const TILE_COUNT: usize = (COLUMNS * ROWS) as usize;
 
 // game
 // scene (main menu) or layer
 // scene (map screen) or layer
 // scene (game scene) or layer
 // room -> when the user walks to another room, just swap this
-// foreground_tiles
-// background_tiles
-// entities (that should be removed when switching rooms)
+//      foreground_tiles
+//      background_tiles
+//      entities (that should be removed when switching rooms)
 // player
-// entities (survive room swap, bubble)
+// entities (that survive room swap, bubble)
 
 // note: room might be doing too much? perhaps add an extra layer
 const ROOM_BYTES: &[u8; 1920] =
@@ -24,7 +26,7 @@ const ROOM_BYTES: &[u8; 1920] =
 
 pub struct Room {
     // TODO: pub background_tiles: Tiles,
-    pub foreground_tiles: Tiles,
+    pub foreground_tiles: Grid<Tile, TILE_COUNT, TILE_SIZE, COLUMNS, ROWS>,
 }
 
 impl Room {
@@ -39,7 +41,7 @@ impl Room {
         }
         Room {
             // background_tiles: Default::default(),
-            foreground_tiles: Tiles { inner: tiles_array },
+            foreground_tiles: Grid { inner: tiles_array },
         }
     }
 
@@ -69,15 +71,33 @@ impl Room {
         };
         io.write(bytes).unwrap();
     }
-}
 
-pub struct Tiles {
-    inner: [Tile; TILE_COUNT],
-}
+    pub fn collides(&self, rect: &Rect) -> bool {
+        let start_x = (rect.left().max(0) as usize / TILE_SIZE).min(COLUMNS);
+        let end_x = ((rect.right().max(0) as usize + TILE_SIZE - 1) / TILE_SIZE).min(COLUMNS);
+        let start_y = (rect.top().max(0) as usize / TILE_SIZE).min(ROWS);
+        let end_y = ((rect.bottom().max(0) as usize + TILE_SIZE - 1) / TILE_SIZE).min(ROWS);
+    
+        for y in start_y..end_y.min(ROWS) {
+            for x in start_x..end_x.min(COLUMNS) {
+                let index = y * COLUMNS + x;
+                // Check if the grid cell is occupied
+                if self.foreground_tiles[index].visible {
+                    let cell_rect = Rect::new(
+                        (x * TILE_SIZE) as i32,
+                        (y * TILE_SIZE) as i32,
+                        TILE_SIZE as u32,
+                        TILE_SIZE as u32,
+                    );
 
-impl Tiles {
-    pub fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut Tile {
-        &mut self.inner[x + (TILES_PER_ROW * y)]
+                    // Check for intersection with the current grid cell
+                    if cell_rect.has_intersection(*rect) {
+                        return true; // Collision detected
+                    }
+                }
+            }
+        }
+        false // No collision detected
     }
 }
 
@@ -87,47 +107,3 @@ pub struct Tile {
     pub visible: bool,
 }
 
-impl Default for Tiles {
-    fn default() -> Self {
-        Self {
-            inner: [Default::default(); TILE_COUNT],
-        }
-    }
-}
-
-impl<'a> IntoIterator for &'a Tiles {
-    // into iterator is so that for loops work
-    type Item = (usize, usize, &'a Tile);
-    type IntoIter = TileIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        TileIterator {
-            tiles: &self.inner,
-            index: 0,
-        }
-    }
-}
-
-pub struct TileIterator<'a> {
-    tiles: &'a [Tile; TILE_COUNT],
-    index: usize,
-}
-
-impl<'a> Iterator for TileIterator<'a> {
-    type Item = (usize, usize, &'a Tile);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= TILE_COUNT {
-            return None;
-        }
-
-        let current_index = self.index;
-        self.index += 1;
-
-        let x = current_index % TILES_PER_ROW as usize;
-        let y = current_index / TILES_PER_ROW as usize;
-        let tile = &self.tiles[current_index];
-
-        Some((x, y, tile))
-    }
-}

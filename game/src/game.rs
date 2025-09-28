@@ -1,6 +1,6 @@
-use crate::{SCREEN_TO_GAME_PROJECTION, editor::Editor, materials, room::Room};
+use crate::{SCREEN_TO_GAME_PROJECTION, editor::Editor, materials, player::Player, room::Room};
 use common::{
-    Device, TextureFormat,
+    Device, Rect, TextureFormat,
     graphics::{
         IDENTITY, batch::Batch, material::Material, render_target::RenderTarget, texture::Texture,
     },
@@ -18,6 +18,7 @@ pub struct Game {
     pub gui: Gui,
     // pub arena: Arena<128>, TODO: needed?
     pub room: Room,
+    pub player: Player,
     pub editor: Editor,
     pub atlas: TextureAtlas,
 }
@@ -40,6 +41,7 @@ impl Game {
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
             editor: Default::default(),
+            player: Player::new(),
             room: Room::new(),
             atlas,
         }
@@ -60,11 +62,14 @@ impl Game {
 
         if self.editor.showing {
             self.editor.update(&mut self.room, &self.atlas);
-        } else {
-            self.room.update(&self.atlas);
-            if window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255])) {
-                self.editor.showing = true;
-            }
+            return;
+        }
+
+        self.room.update(&self.atlas);
+        self.player.update(&self.room);
+
+        if window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255])) {
+            self.editor.showing = true;
         }
     }
 
@@ -72,23 +77,28 @@ impl Game {
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
         if self.editor.showing {
             self.editor.render(batch, &self.room, &self.atlas);
-        } else {
-            self.room.render(batch, &self.atlas);
-
-            let game_mouse_position =
-                &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
-            batch.push_material(&self.material);
-            batch.circle(
-                [
-                    game_mouse_position.x as i32 as f32,
-                    game_mouse_position.y as i32 as f32,
-                ],
-                14.0f32,
-                54,
-                [255, 255, 255, 255],
-            );
-            batch.pop_material();
+            return;
         }
+        self.room.render(batch, &self.atlas);
+
+        let game_mouse_position = &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
+
+        let mut rect = Rect::new(
+            game_mouse_position.x as i32,
+            game_mouse_position.y as i32,
+            4,
+            4,
+        );
+        rect.offset(-2, -2);
+        let collides = self.room.collides(&rect);
+
+        if collides {
+            batch.rect([rect.x as f32, rect.y as f32, 0f32], [4f32, 4f32], [0, 255, 0, 255]);
+        } else {
+            batch.rect([rect.x as f32, rect.y as f32, 0f32], [4f32, 4f32], [255, 255, 255, 255]);
+        }
+
+        self.player.render(batch);
     }
 }
 
