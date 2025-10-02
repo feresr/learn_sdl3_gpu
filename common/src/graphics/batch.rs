@@ -122,16 +122,12 @@ impl Batch {
     // TODO: why is this taking a glm::2 as position (and not [f32;3])
     pub fn texture(&mut self, texture: Texture, position: glm::Vec2) {
         let mut current_batch = self.current_batch();
-        match current_batch.texture.as_ref() {
-            Some(batch_texture) => {
-                if batch_texture != &texture {
-                    self.push_batch();
-                    current_batch = self.current_batch();
-                }
-                current_batch.texture = Some(texture.clone())
-            }
-            None => {
-                current_batch.texture = Some(texture.clone());
+
+        // Push a new batch if the current_batch already has a texture assigned.
+        if let Some(batch_texture) = current_batch.texture.as_ref() {
+            if batch_texture != &texture {
+                self.push_batch();
+                current_batch = self.current_batch();
             }
         }
 
@@ -143,6 +139,8 @@ impl Batch {
             position.y + texture.height as f32,
             0.0f32,
         ];
+
+        current_batch.texture = Some(texture);
 
         self.push_quad(
             position0,
