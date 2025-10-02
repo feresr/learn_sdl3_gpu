@@ -1,12 +1,19 @@
-Game engine built with SDL3::GPU (Early stages - WIP)
 
-- Only tested in MacOs / METAL so far (use shadercross to cross compile shaders to other platforms)
-- Minimal libraries (SDL3, nalgebra, stb_image)
-- Support for hot-realoading the game .dll
-- Sprite batcher (to minimise draw calls)
-- Multiple shaders/material support 
-- Custom Immediate mode GUI (WIP)
-- Next up: ECS
+# Game Engine (WIP) – Powered by SDL3::GPU
+
+## A lightweight, experimental game engine focused on performance and minimal dependencies.
+
+- Platform Support: Currently tested on macOS/Metal (cross-compilation via shadercross for other backends).
+- Dependencies: Minimal (SDL3, nalgebra, stb_image).
+
+### Features:
+
+- Hot-reloadable game DLLs for rapid iteration
+- Sprite batching to reduce draw calls
+- Multiple shader/material support
+- Custom immediate-mode GUI (WIP)
+- Custom global allocator (WIP)
+- Roadmap: Entity Component System (ECS) integration
 
 ![basic triangle](screenshot.jpg)
 ![demo](demo.jpg)
