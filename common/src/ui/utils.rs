@@ -2,7 +2,6 @@ use sdl3::render::FRect;
 
 use crate::ui::widget::Widget;
 
-
 pub(crate) struct MeasuredWidget {
     pub(crate) widget: Widget,
     pub(crate) rect: FRect,

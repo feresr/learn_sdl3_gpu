@@ -2,9 +2,12 @@ use std::collections::HashMap;
 
 use common::{
     Point, Rect,
-    graphics::{subtexture::Subtexture, texture::Texture},
+    graphics::{VEC_2, subtexture::Subtexture, texture::Texture},
     ui::{gui::Gui, widget::Widget},
-    utils::animation::{Animation, Frame},
+    utils::{
+        animation::{Animation, Frame},
+        create_transform,
+    },
 };
 
 /**
@@ -35,10 +38,8 @@ pub struct Sprite {
 }
 
 impl Sprite {
-    // TODO: find a way to centralize all assets this should only have a reference? idk
-    // chekc the other project
     pub(crate) fn from_atlas(
-        texture: Texture, // TODO bake texture name into source?
+        texture: Texture, // TODO bake texture name into source (atlas)? To avoid passing two textures here
         source: &str,
     ) -> Self {
         let parser = AtlasParser::texture_and_source(texture, source);
@@ -54,10 +55,6 @@ impl Sprite {
             flip_x: false,
             flip_y: false,
         }
-    }
-
-    pub fn stop(&mut self) {
-        self.playing = None;
     }
 
     pub fn play(&mut self, animation_name: &str) {
@@ -106,21 +103,24 @@ impl Sprite {
         window.add_widget(Widget::Text(format!("frame_index: {}", self.frame_index)));
         window.add_widget(Widget::Text(format!("timer: {}", self.timer)));
 
-            window.add_widget(Widget::Text(format!("Animations:")));
+        window.add_widget(Widget::Text(format!("Animations:")));
         for (name, anim) in &self.animations {
-            window.add_widget(Widget::Text(format!(" - {}: {}-{} ", name, anim.from, anim.to)));
+            window.add_widget(Widget::Text(format!(
+                " - {}: {}-{} ",
+                name, anim.from, anim.to
+            )));
         }
 
         let frame = &self.frames[self.frame_index as usize];
         let mut subtexture = frame.subtexture.clone();
         subtexture.flip(self.flip_x, self.flip_y);
-        batch.subtexture(
-            subtexture,
-            glm::vec2(
-                position.x as f32 - frame.pivot.x as f32,
-                position.y as f32 - frame.pivot.y as f32,
-            ),
-        );
+
+        let position = glm::vec2(position.x as f32, position.y as f32);
+        let origin = glm::vec2(frame.pivot.x as f32, frame.pivot.y as f32);
+        let transform = create_transform(position, origin, glm::vec2(self.scale_x, self.scale_y));
+        batch.push_matrix(transform);
+        batch.subtexture(subtexture, VEC_2);
+        batch.pop_matrix();
     }
 }
 
@@ -180,7 +180,7 @@ impl AtlasParser {
                     duration,
                     pivot: Point::new(pivot_x, pivot_y),
                 };
-                let _ = frames.push(frame); // TODO use expect,
+                frames.push(frame);
             } else {
                 animations.insert(
                     first_word.to_string(),

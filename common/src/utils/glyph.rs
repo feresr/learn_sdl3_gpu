@@ -13,7 +13,7 @@ pub struct Glyph {
 }
 
 pub struct GlyphData {
-    pub map: HashMap<u32, Glyph>, // TODO: use an array or custom alloc. Avoid std?
+    pub map: HashMap<u32, Glyph>,
 }
 
 impl GlyphData {

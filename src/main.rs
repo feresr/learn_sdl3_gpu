@@ -29,6 +29,8 @@ fn main() {
     let window = video_subsystem
         .window("Game", 320 * 4, 180 * 4)
         .resizable()
+        .high_pixel_density()
+        .position_centered()
         .build()
         .expect("Unable to create window");
 

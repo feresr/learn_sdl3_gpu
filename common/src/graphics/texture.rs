@@ -13,7 +13,7 @@ static mut NEXT_ID: u16 = 0;
 #[derive(Clone)]
 pub struct Texture {
     pub id: u16,
-    needs_upload: bool, // TODO: rename to needs_upload?
+    needs_upload: bool,
     inner: Rc<(sdl3::gpu::Texture<'static>, Sampler, TransferBuffer)>,
 }
 
