@@ -160,18 +160,13 @@ impl Batch {
 
     pub fn subtexture(&mut self, subtexture: Subtexture, position: glm::Vec2) {
         let mut current_batch = self.current_batch();
-        match current_batch.texture.as_ref() {
-            Some(batch_texture) => {
-                if batch_texture != &subtexture.texture {
-                    self.push_batch();
-                    current_batch = self.current_batch();
-                }
-                current_batch.texture = Some(subtexture.texture.clone())
-            }
-            None => {
-                current_batch.texture = Some(subtexture.texture.clone());
+        if let Some(batch_texture) = current_batch.texture.as_ref() {
+            if batch_texture != &subtexture.texture {
+                self.push_batch();
+                current_batch = self.current_batch();
             }
         }
+        current_batch.texture = Some(subtexture.texture);
 
         let position0 = [position.x, position.y, 0.0f32];
         let position1 = [position.x + subtexture.rect.w as f32, position.y, 0.0f32];
@@ -181,7 +176,6 @@ impl Batch {
             position.y + subtexture.rect.h as f32,
             0.0f32,
         ];
-
         let uvs = subtexture.uvs;
         self.push_quad(
             position0,
