@@ -1,7 +1,4 @@
-use std::{
-    path::Path,
-    rc::Rc,
-};
+use std::{path::Path, rc::Rc};
 
 use sdl3::gpu::{
     self, CopyPass, Device, Sampler, SamplerCreateInfo, TextureCreateInfo, TextureFormat,
@@ -11,12 +8,12 @@ use sdl3::gpu::{
 static mut NEXT_ID: u16 = 0;
 
 /**
- * Lightweight handle wrapping around a Texture + Sampler.
+ * Lightweight handle wrapping around a sdl::Texture + sdl::Sampler.
  */
 #[derive(Clone)]
 pub struct Texture {
     pub id: u16,
-    uploaded: bool, // TODO: rename to needs_upload?
+    needs_upload: bool, // TODO: rename to needs_upload?
     inner: Rc<(sdl3::gpu::Texture<'static>, Sampler, TransferBuffer)>,
 }
 
@@ -47,7 +44,7 @@ impl Texture {
         );
 
         let (_, _, transfer_buffer) = texture.inner.as_ref();
-        texture.uploaded = false;
+        texture.needs_upload = true;
         let mut map = transfer_buffer.map(&device, true);
         let memory = map.mem_mut();
         memory[..image.data.len()].copy_from_slice(&image.data);
@@ -76,7 +73,7 @@ impl Texture {
         );
 
         let (_, _, transfer_buffer) = texture.inner.as_ref();
-        texture.uploaded = false;
+        texture.needs_upload = true;
         let mut map = transfer_buffer.map(&device, true);
         let memory = map.mem_mut();
         memory[..image.data.len()].copy_from_slice(&image.data);
@@ -86,10 +83,10 @@ impl Texture {
     }
 
     pub fn upload(&mut self, pass: &CopyPass) {
-        if self.uploaded {
+        if !self.needs_upload {
             return;
         }
-        self.uploaded = true;
+        self.needs_upload = false;
 
         let (texture, _, transfer_buffer) = self.inner.as_ref();
         pass.upload_to_gpu_texture(
@@ -156,7 +153,7 @@ impl Texture {
         return Texture {
             id,
             inner: Rc::new((texture, sampler, transfer_buffer)),
-            uploaded: true, // Offscreen render_targets don't need to be 'uploaded'
+            needs_upload: false, // Offscreen render_targets don't need to be uploaded
         };
     }
 
@@ -168,7 +165,7 @@ impl Texture {
         let (texture, _, _) = self.inner.as_ref();
         texture.width()
     }
-    
+
     pub fn height(&self) -> u32 {
         let (texture, _, _) = self.inner.as_ref();
         texture.height()

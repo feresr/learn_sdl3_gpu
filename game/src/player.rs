@@ -32,6 +32,14 @@ impl Mover {
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum State {
+    ATTACK,
+    IDLE,
+    WALKING,
+    JUMP,
+}
+
 pub struct Player {
     position: Point,
     mover: Mover,
@@ -39,6 +47,7 @@ pub struct Player {
     pivot: Point,
     grounded: bool,
     sprite: Sprite,
+    state: State,
 }
 
 // TODO: fix filepath (use relative)
@@ -58,29 +67,35 @@ impl Player {
             pivot: Point::new(-4, -8),
             grounded: false,
             sprite: Sprite::from_atlas(texture, PLAYER_ATLAS),
+            state: State::IDLE,
         }
     }
 
     pub fn update(&mut self, room: &Room) {
         self.sprite.update();
-        self.sprite.play("IDLE");
+
+        if self.sprite.looping {
+            self.state = State::IDLE;
+        }
 
         // Controls
         self.mover.speed.x = 0f32;
-        if Keyboard::held(common::Keycode::D) {
-            self.mover.speed.x = 2f32;
-            self.sprite.flip_x = false;
-        }
-        if Keyboard::held(common::Keycode::A) {
-            self.mover.speed.x = -2f32;
-            self.sprite.flip_x = true;
+        if self.state != State::ATTACK { // Attacking freezes player in place (no movement) 
+            if Keyboard::held(common::Keycode::D) {
+                self.mover.speed.x = 2f32;
+                self.sprite.flip_x = false;
+            }
+            if Keyboard::held(common::Keycode::A) {
+                self.mover.speed.x = -2f32;
+                self.sprite.flip_x = true;
+            }
+            if Keyboard::pressed(common::Keycode::W) && self.grounded {
+                self.mover.speed.y = -8f32;
+            }
         }
 
-        if Keyboard::pressed(common::Keycode::W) && self.grounded {
-            self.mover.speed.y = -8f32;
-        }
-        if Keyboard::pressed(common::Keycode::Space) && self.grounded {
-            self.sprite.play("ATTACK");
+        if Keyboard::pressed(common::Keycode::Space) {
+            self.state = State::ATTACK;
         }
 
         // Reposition collider to self.position
@@ -127,12 +142,19 @@ impl Player {
         // Apply Gravity
         if !self.grounded {
             self.mover.speed.y += 0.3f32;
-            self.sprite.play("JUMP");
+            self.state = State::JUMP;
         }
 
         // Apply movement
         self.position.x = self.collider.x - self.pivot.x;
         self.position.y = self.collider.y - self.pivot.y;
+
+        match self.state {
+            State::ATTACK => self.sprite.play("ATTACK"),
+            State::IDLE => self.sprite.play("IDLE"),
+            State::WALKING => self.sprite.play("WALK"),
+            State::JUMP => self.sprite.play("JUMP"),
+        }
     }
 
     pub fn render(&self, batch: &mut Batch) {

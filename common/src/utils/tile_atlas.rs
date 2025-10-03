@@ -2,21 +2,22 @@ use sdl3::rect::Rect;
 
 use crate::graphics::{subtexture::Subtexture, texture::Texture};
 
-pub struct TextureAtlas {
+pub struct TileAtlas {
     texture: Texture,
     tiles_width: u16,
     tiles_height: u16,
     tile_size: u16,
 }
 
-impl TextureAtlas {
+impl TileAtlas {
     pub fn new(texture: Texture, tile_size: u16) -> Self {
         assert!(
-            texture.width % tile_size == 0 && texture.height % tile_size == 0,
+            // TODO: u32 as u16 might overflow
+            (texture.width() as u16) % tile_size == 0 && (texture.height() as u16) % tile_size == 0,
             "Texture dimensions must be divisible by tile_size"
         );
-        let tiles_width = texture.width / tile_size;
-        let tiles_height = texture.height / tile_size;
+        let tiles_width = texture.width() as u16 / tile_size;
+        let tiles_height = texture.height() as u16 / tile_size;
         Self {
             texture,
             tiles_width,
@@ -25,7 +26,7 @@ impl TextureAtlas {
         }
     }
 
-    pub fn get_index(&self, index: usize) -> Subtexture {
+    pub fn get_at_index(&self, index: usize) -> Subtexture {
         let x = index % self.tiles_width as usize;
         let y = index / self.tiles_width as usize;
         let rect = Rect::new(
@@ -50,7 +51,7 @@ impl TextureAtlas {
     }
 }
 
-impl<'a> IntoIterator for &'a TextureAtlas {
+impl<'a> IntoIterator for &'a TileAtlas {
     type Item = Subtexture;
 
     type IntoIter = TextureAtlasIterator<'a>;
@@ -65,7 +66,7 @@ impl<'a> IntoIterator for &'a TextureAtlas {
 }
 
 pub struct TextureAtlasIterator<'a> {
-    atlas: &'a TextureAtlas,
+    atlas: &'a TileAtlas,
     index: usize,
     tile_count: usize,
 }
@@ -80,7 +81,7 @@ impl<'a> Iterator for TextureAtlasIterator<'a> {
         let current_index = self.index;
         self.index += 1;
 
-        let texture = self.atlas.get_index(current_index);
+        let texture = self.atlas.get_at_index(current_index);
 
         Some(texture)
     }

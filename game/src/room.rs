@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use common::{IOStream, Rect, utils::texture_atlas::TextureAtlas};
+use common::{IOStream, Rect, utils::tile_atlas::TileAtlas};
 
 use crate::grid::Grid;
 
@@ -20,8 +20,7 @@ pub const TILE_COUNT: usize = (COLUMNS * ROWS) as usize;
 // player
 // entities (that survive room swap, bubble)
 
-// note: room might be doing too much? perhaps add an extra layer
-const ROOM_BYTES: &[u8; 1920] =
+const ROOM_BYTES: &[u8] =
     include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/level");
 
 pub struct Room {
@@ -45,14 +44,16 @@ impl Room {
         }
     }
 
-    pub(crate) fn update(&mut self, _atlas: &TextureAtlas) {}
+    pub(crate) fn update(&mut self) {
 
-    pub(crate) fn render(&self, batch: &mut common::graphics::batch::Batch, atlas: &TextureAtlas) {
+    }
+
+    pub(crate) fn render(&self, batch: &mut common::graphics::batch::Batch, atlas: &TileAtlas) {
         for (x, y, tile) in &self.foreground_tiles {
             if !tile.visible {
                 continue;
             }
-            let sprite = atlas.get_index(tile.id.into());
+            let sprite = atlas.get_at_index(tile.id.into());
             batch.subtexture(
                 sprite,
                 glm::vec2(x as f32 * TILE_SIZE as f32, y as f32 * TILE_SIZE as f32),

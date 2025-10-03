@@ -6,6 +6,9 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib"]
 
+[build-dependencies]
+common = { path = "../common" }
+
 [dependencies]
 common = { path = "../common" }
 nalgebra-glm = {workspace = true} 

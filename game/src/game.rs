@@ -6,21 +6,20 @@ use common::{
     },
     input::mouse::Mouse,
     ui::{gui::Gui, widget::Widget},
-    utils::texture_atlas::TextureAtlas,
+    utils::tile_atlas::TileAtlas,
 };
 
-static ATLAS: &[u8; 402] =
+static ATLAS: &[u8] =
     include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/atlas.png");
 
 pub struct Game {
     pub material: Material,
     pub game_target: RenderTarget,
     pub gui: Gui,
-    // pub arena: Arena<128>, TODO: needed?
     pub room: Room,
     pub player: Player,
     pub editor: Editor,
-    pub atlas: TextureAtlas,
+    pub tile_atlas: TileAtlas,
 }
 
 impl Game {
@@ -33,7 +32,7 @@ impl Game {
         ));
 
         let atlas_texture = Texture::from_bytes(device.clone(), ATLAS);
-        let atlas = TextureAtlas::new(atlas_texture, 8);
+        let tile_atlas = TileAtlas::new(atlas_texture, 8);
 
         Game {
             material: Material::from_specification(device.clone(), &materials::RED_MATERIAL),
@@ -41,9 +40,9 @@ impl Game {
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
             editor: Default::default(),
-            player: Player::new(),
+            player: Player::new(device.clone()),
             room: Room::new(),
-            atlas,
+            tile_atlas,
         }
     }
 
@@ -59,13 +58,16 @@ impl Game {
         window.add_widget(common::ui::widget::Widget::Text(
             "Press 'R' to hot-reload the game dll.".to_string(),
         ));
+        window.add_widget(common::ui::widget::Widget::Text(
+            "AWSD to move, SPACE to attack".to_string(),
+        ));
 
         if self.editor.showing {
-            self.editor.update(&mut self.room, &self.atlas);
+            self.editor.update(&mut self.room, &self.tile_atlas);
             return;
         }
 
-        self.room.update(&self.atlas);
+        self.room.update();
         self.player.update(&self.room);
 
         if window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255])) {
@@ -76,10 +78,10 @@ impl Game {
     pub(crate) fn render(&self, batch: &mut Batch) {
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
         if self.editor.showing {
-            self.editor.render(batch, &self.room, &self.atlas);
+            self.editor.render(batch, &self.room, &self.tile_atlas);
             return;
         }
-        self.room.render(batch, &self.atlas);
+        self.room.render(batch, &self.tile_atlas);
 
         let game_mouse_position = &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
 
@@ -93,9 +95,17 @@ impl Game {
         let collides = self.room.collides(&rect);
 
         if collides {
-            batch.rect([rect.x as f32, rect.y as f32, 0f32], [4f32, 4f32], [0, 255, 0, 255]);
+            batch.rect(
+                [rect.x as f32, rect.y as f32, 0f32],
+                [4f32, 4f32],
+                [0, 255, 0, 255],
+            );
         } else {
-            batch.rect([rect.x as f32, rect.y as f32, 0f32], [4f32, 4f32], [255, 255, 255, 255]);
+            batch.rect(
+                [rect.x as f32, rect.y as f32, 0f32],
+                [4f32, 4f32],
+                [255, 255, 255, 255],
+            );
         }
 
         self.player.render(batch);

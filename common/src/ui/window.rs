@@ -9,7 +9,7 @@ use crate::{
     utils::font_atlas::FontAtlas,
 };
 
-const MAX_WIDGETS: usize = 16;
+const MAX_WIDGETS: usize = 26;
 pub(crate) const PADDING: f32 = 12f32;
 pub(crate) const HEADER_HEIGHT: f32 = 32f32;
 
@@ -22,6 +22,7 @@ pub struct Window {
     dragging: bool,
     hovering_header: bool,
     cursor: glm::Vec2, // Relative to self.position
+    // TODO use vec here (with custom allocator)
     widgets: [MeasuredWidget; MAX_WIDGETS],
     widget_count: usize,
     direction: Direction,

@@ -3,7 +3,7 @@ use std::ops::{Add, Sub};
 pub mod font_atlas;
 pub mod tile_atlas;
 pub mod glyph;
-pub mod texture_atlas;
+pub mod animation;
 
 pub fn approach<T>(current: T, value: T, step: T) -> T
 where

@@ -1,7 +1,7 @@
 use common::{
     input::mouse::Mouse,
     ui::{gui::Gui, utils::Direction, widget::Widget},
-    utils::texture_atlas::TextureAtlas,
+    utils::tile_atlas::TileAtlas,
 };
 
 use crate::{
@@ -17,7 +17,7 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn update(&mut self, room: &mut Room, atlas: &TextureAtlas) {
+    pub fn update(&mut self, room: &mut Room, atlas: &TileAtlas) {
         let window = Gui::window("Map Editor");
         let mut index = 0;
         for mut tile in atlas {
@@ -37,7 +37,7 @@ impl Editor {
 
         window.add_widget(Widget::Text("Selected:".to_string()));
         {
-            let mut selected_tile = atlas.get_index(self.selected_tile as usize);
+            let mut selected_tile = atlas.get_at_index(self.selected_tile as usize);
             selected_tile.rect.w *= 6;
             selected_tile.rect.h *= 6;
             window.add_widget(Widget::Subtexture(selected_tile));
@@ -77,7 +77,7 @@ impl Editor {
         &self,
         batch: &mut common::graphics::batch::Batch,
         room: &Room,
-        atlas: &TextureAtlas,
+        atlas: &TileAtlas,
     ) {
         // IDea: select tile and modify properties?
         // For panning, just push a metrix here

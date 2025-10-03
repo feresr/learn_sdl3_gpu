@@ -15,7 +15,7 @@ impl GameMemory {
 
     // Debug ImGui requires more memory 
     #[cfg(debug_assertions)]
-    pub const GAME_MEMORY: usize = 1024 * 15;
+    pub const GAME_MEMORY: usize = 1024 * 25;
 
     pub fn default() -> Self {
         let storage = unsafe { SDL_malloc(GameMemory::GAME_MEMORY) };

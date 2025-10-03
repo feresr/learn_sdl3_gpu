@@ -137,6 +137,13 @@ fn main() {
             while Instant::now() < sleep_until {
                 std::hint::spin_loop();
             }
+        } else {
+            #[cfg(debug_assertions)]
+            {
+                // TODO: Panic in debug on frame drop
+                // let elapsed = (sleep_until - now).subsec_millis();
+                // println!("Running under slee_until elapsed {:?}", elapsed);
+            }
         }
     }
 
