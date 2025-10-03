@@ -15,5 +15,5 @@
 - Custom global allocator (WIP)
 - Roadmap: Entity Component System (ECS) integration
 
-![basic triangle](screenshot.jpg)
+![demo2](demo2.jpg)
 ![demo](demo.jpg)
