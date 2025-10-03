@@ -1,6 +1,10 @@
-use common::{Point, Rect, graphics::batch::Batch, input::keyboard::Keyboard};
+use common::{
+    Device, Point, Rect,
+    graphics::{batch::Batch, texture::Texture},
+    input::keyboard::Keyboard,
+};
 
-use crate::room::Room;
+use crate::{room::Room, sprite::Sprite};
 
 struct Mover {
     speed: glm::Vec2,
@@ -34,36 +38,88 @@ pub struct Player {
     collider: Rect,
     pivot: Point,
     grounded: bool,
+    sprite: Sprite,
 }
 
+// TODO: fix filepath (use relative)
+static PLAYER_PNG: &[u8] =
+    include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/player.png");
+static PLAYER_ATLAS: &str =
+    include_str!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/player.atlas");
+
 impl Player {
-    pub fn new() -> Player {
+    pub fn new(device: Device) -> Player {
+        let texture = Texture::from_bytes(device, PLAYER_PNG);
+
         Self {
             position: Point::new(0, 0),
             mover: Default::default(),
             collider: Rect::new(0, 0, 8, 8),
-            pivot: Point::new(-4, -4),
+            pivot: Point::new(-4, -8),
             grounded: false,
+            sprite: Sprite::from_atlas(texture, PLAYER_ATLAS),
         }
     }
 
     pub fn update(&mut self, room: &Room) {
+        self.sprite.update();
+        self.sprite.play("IDLE");
+
         // Controls
         self.mover.speed.x = 0f32;
         if Keyboard::held(common::Keycode::D) {
             self.mover.speed.x = 2f32;
+            self.sprite.flip_x = false;
         }
         if Keyboard::held(common::Keycode::A) {
             self.mover.speed.x = -2f32;
+            self.sprite.flip_x = true;
         }
 
         if Keyboard::pressed(common::Keycode::W) && self.grounded {
             self.mover.speed.y = -8f32;
         }
+        if Keyboard::pressed(common::Keycode::Space) && self.grounded {
+            self.sprite.play("ATTACK");
+        }
 
         // Reposition collider to self.position
         self.collider.reposition(self.position + self.pivot);
+        // Calculate the integer and reminder speed to move
+        let mut to_move = self.mover.get_integer_move_amount();
 
+        let signum_y = to_move.y.signum();
+        while to_move.y.abs() > 0 {
+            self.collider.offset(0, signum_y);
+            to_move.y -= signum_y;
+            if room.collides(&self.collider) {
+                self.mover.speed.y = 0f32;
+                self.mover.reminder.y = 0f32;
+                self.collider.offset(0, -signum_y);
+                if room.collides(&self.collider) {
+                    // TODO: remove this in release
+                    panic!("Still colliding after y fix")
+                }
+                break;
+            }
+        }
+        let signum_x = to_move.x.signum();
+        while to_move.x.abs() > 0 {
+            self.collider.offset(signum_x, 0);
+            to_move.x -= signum_x;
+            if room.collides(&self.collider) {
+                self.mover.speed.x = 0f32;
+                self.mover.reminder.x = 0f32;
+                self.collider.offset(-signum_x, 0);
+                if room.collides(&self.collider) {
+                    // TODO: remove this in release
+                    panic!("Still colliding after x fix")
+                }
+                break;
+            }
+        }
+
+        // Check/Update grounded state
         let mut ground_check_collider = self.collider.clone();
         ground_check_collider.offset(0, 1);
         self.grounded = room.collides(&ground_check_collider);
@@ -71,28 +127,7 @@ impl Player {
         // Apply Gravity
         if !self.grounded {
             self.mover.speed.y += 0.3f32;
-        }
-
-        // Calculate the integer and reminder speed to move
-        let mut to_move = self.mover.get_integer_move_amount();
-
-        while to_move.y.abs() > 0 {
-            if room.collides(&self.collider) {
-                self.mover.speed.y = 0f32;
-                self.collider.y -= to_move.y.signum(); // Backs out of collision
-                break;
-            }
-            self.collider.offset(0, to_move.y.signum());
-            to_move.y -= to_move.y.signum();
-        }
-        while to_move.x.abs() > 0 {
-            if room.collides(&self.collider) {
-                self.mover.speed.x = 0f32;
-                self.collider.x -= to_move.x.signum();
-                break;
-            }
-            self.collider.offset(to_move.x.signum(), 0);
-            to_move.x -= to_move.x.signum();
+            self.sprite.play("JUMP");
         }
 
         // Apply movement
@@ -101,11 +136,22 @@ impl Player {
     }
 
     pub fn render(&self, batch: &mut Batch) {
-        batch.circle(
-            [self.position.x as f32, self.position.y as f32],
-            12f32,
-            22,
-            [0, 185, 20, 255],
-        );
+        self.sprite.render(&self.position, batch);
+
+        // DEBUG collider
+        // batch.rect(
+        //     [
+        //         (self.position.x + self.pivot.x) as f32,
+        //         (self.position.y + self.pivot.y) as f32,
+        //         0f32,
+        //     ],
+        //     [8f32, 8f32],
+        //     [255, 0, 0, 100],
+        // );
+        // batch.rect(
+        //     [(self.position.x) as f32, (self.position.y) as f32, 0f32],
+        //     [1f32, 1f32],
+        //     [255, 255, 255, 100],
+        // );
     }
 }
