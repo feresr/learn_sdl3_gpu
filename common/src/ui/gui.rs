@@ -7,7 +7,7 @@ use crate::{
 };
 
 const MAX_WINDOWS: usize = 8;
-static FONT_ATLAS: &[u8; 6516] =
+static FONT_ATLAS: &[u8] =
     include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/common/src/ui/Iosevka/Iosevka.png");
 static FONT_GLYPH_DATA_FNT: &'static str =
     include_str!("/Users/feresr/Workspace/learn_sdl3_gpu/common/src/ui/Iosevka/Iosevka.txt");

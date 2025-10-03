@@ -132,11 +132,11 @@ impl Batch {
         }
 
         let position0 = [position.x, position.y, 0.0f32];
-        let position1 = [position.x + texture.width as f32, position.y, 0.0f32];
-        let position2 = [position.x, position.y + texture.height as f32, 0.0f32];
+        let position1 = [position.x + texture.width() as f32, position.y, 0.0f32];
+        let position2 = [position.x, position.y + texture.height() as f32, 0.0f32];
         let position3 = [
-            position.x + texture.width as f32,
-            position.y + texture.height as f32,
+            position.x + texture.width() as f32,
+            position.y + texture.height() as f32,
             0.0f32,
         ];
 

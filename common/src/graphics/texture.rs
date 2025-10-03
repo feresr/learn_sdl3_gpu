@@ -1,4 +1,7 @@
-use std::path::Path;
+use std::{
+    path::Path,
+    rc::Rc,
+};
 
 use sdl3::gpu::{
     self, CopyPass, Device, Sampler, SamplerCreateInfo, TextureCreateInfo, TextureFormat,
@@ -7,21 +10,14 @@ use sdl3::gpu::{
 
 static mut NEXT_ID: u16 = 0;
 
-// TODO: is cloning textures the best approach? The size of this 64 is on the border of being expensive.
 /**
- * Handle wrapping around a Texture + Sampler.
- * Both of these are Arc so this struct can be copied freely.
+ * Lightweight handle wrapping around a Texture + Sampler.
  */
 #[derive(Clone)]
 pub struct Texture {
     pub id: u16,
-    // TODO: you can get these from inner texture 
-    pub width: u16,
-    pub height: u16,
-    inner_texture: sdl3::gpu::Texture<'static>,
-    inner_sampler: Sampler,
-    transfer_buffer: TransferBuffer,
     uploaded: bool, // TODO: rename to needs_upload?
+    inner: Rc<(sdl3::gpu::Texture<'static>, Sampler, TransferBuffer)>,
 }
 
 impl PartialEq for Texture {
@@ -50,8 +46,9 @@ impl Texture {
             TextureFormat::R8g8b8a8Unorm,
         );
 
+        let (_, _, transfer_buffer) = texture.inner.as_ref();
         texture.uploaded = false;
-        let mut map = texture.transfer_buffer.map(&device, true);
+        let mut map = transfer_buffer.map(&device, true);
         let memory = map.mem_mut();
         memory[..image.data.len()].copy_from_slice(&image.data);
         map.unmap();
@@ -78,8 +75,9 @@ impl Texture {
             TextureFormat::R8g8b8a8Unorm,
         );
 
+        let (_, _, transfer_buffer) = texture.inner.as_ref();
         texture.uploaded = false;
-        let mut map = texture.transfer_buffer.map(&device, true);
+        let mut map = transfer_buffer.map(&device, true);
         let memory = map.mem_mut();
         memory[..image.data.len()].copy_from_slice(&image.data);
         map.unmap();
@@ -93,19 +91,20 @@ impl Texture {
         }
         self.uploaded = true;
 
+        let (texture, _, transfer_buffer) = self.inner.as_ref();
         pass.upload_to_gpu_texture(
             TextureTransferInfo::new()
                 .with_offset(0)
-                .with_pixels_per_row(self.width as u32)
-                .with_rows_per_layer(self.height as u32)
-                .with_transfer_buffer(&self.transfer_buffer),
+                .with_pixels_per_row(texture.width() as u32)
+                .with_rows_per_layer(texture.height() as u32)
+                .with_transfer_buffer(&transfer_buffer),
             TextureRegion::new()
-                .with_texture(&self.inner_texture)
+                .with_texture(&texture)
                 .with_mip_level(0)
                 .with_x(0)
                 .with_y(0)
-                .with_width(self.width as u32)
-                .with_height(self.height as u32)
+                .with_width(texture.width() as u32)
+                .with_height(texture.height() as u32)
                 .with_depth(1),
             false,
         );
@@ -156,22 +155,29 @@ impl Texture {
 
         return Texture {
             id,
-            width,
-            height,
-            inner_texture: texture,
-            inner_sampler: sampler,
-            transfer_buffer: transfer_buffer,
+            inner: Rc::new((texture, sampler, transfer_buffer)),
             uploaded: true, // Offscreen render_targets don't need to be 'uploaded'
         };
     }
 
     pub fn inner(&self) -> &sdl3::gpu::Texture<'static> {
-        &self.inner_texture
+        &self.inner.0
+    }
+
+    pub fn width(&self) -> u32 {
+        let (texture, _, _) = self.inner.as_ref();
+        texture.width()
+    }
+    
+    pub fn height(&self) -> u32 {
+        let (texture, _, _) = self.inner.as_ref();
+        texture.height()
     }
 
     pub fn bindings(&self) -> TextureSamplerBinding {
+        let (texture, sampler, _) = self.inner.as_ref();
         return TextureSamplerBinding::new()
-            .with_sampler(&self.inner_sampler)
-            .with_texture(&self.inner_texture);
+            .with_sampler(sampler)
+            .with_texture(texture);
     }
 }

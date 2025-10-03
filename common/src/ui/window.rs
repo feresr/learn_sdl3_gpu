@@ -137,6 +137,8 @@ impl Window {
             [self.size.x, HEADER_HEIGHT],
             header_color,
         );
+
+        // TODO: Investigate SDL text rendering capabilities instead of custom impl?
         self.draw_text(self.title, glm::vec2(PADDING, 6f32), batch, atlas);
 
         // Draw the rest of the widgets

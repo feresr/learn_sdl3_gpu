@@ -92,8 +92,8 @@ impl RenderTarget {
     pub fn new(texture: Texture) -> Self {
         let projection = glm::ortho(
             0.0f32,
-            texture.width as f32,
-            texture.height as f32,
+            texture.width() as f32,
+            texture.height() as f32,
             0.0f32,
             -1.0f32,
             1.0f32,
@@ -101,8 +101,8 @@ impl RenderTarget {
 
         RenderTarget {
             projection: Some(projection),
-            width: texture.width as u32,
-            height: texture.height as u32,
+            width: texture.width(),
+            height: texture.height(),
             texture: BackingTexture::Texture(texture),
         }
     }
