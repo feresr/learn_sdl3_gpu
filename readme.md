@@ -1,9 +1,7 @@
 
 # Game Engine (WIP) 
 
-A small 2D/3D Rust Game Framework, using few dependencies and simple code to maintain easy building and portability.
-
-## A lightweight, experimental game engine focused on performance and minimal dependencies.
+## A small 2D/3D Rust Game Framework, using few dependencies and simple code to maintain easy building and portability.
 
 - Platform Support: Currently tested on macOS/Metal (cross-compilation via shadercross for other backends).
 - Dependencies: Minimal (SDL3, nalgebra, stb_image).
