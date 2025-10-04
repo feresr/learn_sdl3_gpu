@@ -1,4 +1,4 @@
-use crate::{SCREEN_TO_GAME_PROJECTION, editor::Editor, materials, player::Player, room::Room};
+use crate::{editor::Editor, materials, player::Player, room::{Room, World}, SCREEN_TO_GAME_PROJECTION};
 use common::{
     Device, Rect, TextureFormat,
     graphics::{
@@ -16,7 +16,7 @@ pub struct Game {
     pub material: Material,
     pub game_target: RenderTarget,
     pub gui: Gui,
-    pub room: Room,
+    pub world: World,
     pub player: Player,
     pub editor: Editor,
     pub tile_atlas: TileAtlas,
@@ -41,7 +41,7 @@ impl Game {
             // arena: Default::default(),
             editor: Default::default(),
             player: Player::new(device.clone()),
-            room: Room::new(),
+            world: World::new(),
             tile_atlas,
         }
     }
@@ -63,12 +63,13 @@ impl Game {
         ));
 
         if self.editor.showing {
-            self.editor.update(&mut self.room, &self.tile_atlas);
+            self.editor.update(&mut self.world, &self.tile_atlas);
             return;
         }
 
-        self.room.update();
-        self.player.update(&self.room);
+        let current_room = &mut self.world.rooms[0];
+        current_room.update();
+        self.player.update(&current_room);
 
         if window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255])) {
             self.editor.showing = true;
@@ -77,11 +78,12 @@ impl Game {
 
     pub(crate) fn render(&self, batch: &mut Batch) {
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
+        let current_room = &self.world.rooms[0];
         if self.editor.showing {
-            self.editor.render(batch, &self.room, &self.tile_atlas);
+            self.editor.render(batch, &self.world, &self.tile_atlas);
             return;
         }
-        self.room.render(batch, &self.tile_atlas);
+        current_room.render(batch, &self.tile_atlas);
 
         let game_mouse_position = &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
 
@@ -92,7 +94,7 @@ impl Game {
             4,
         );
         rect.offset(-2, -2);
-        let collides = self.room.collides(&rect);
+        let collides = current_room.collides(&rect);
 
         if collides {
             batch.rect(

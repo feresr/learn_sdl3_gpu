@@ -90,7 +90,7 @@ pub extern "C" fn update_game(
         batch.draw_into(&game.game_target);
         let draw_count = batch.get_batch_count();
 
-        // Add debug informatoin
+        // Add debug information
         {
             let window = Gui::window("Offscreen targets");
             window.set_direction(common::ui::utils::Direction::Vertical);

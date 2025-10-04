@@ -156,6 +156,7 @@ impl Window {
                 Widget::Button(str, color) => {
                     const BUTTON_COLOR_HOVER: [u8; 4] = [14, 14, 14, 255];
                     const BUTTON_COLOR_CLICK: [u8; 4] = [24, 24, 24, 255];
+                    // TODO: fix button hovering (it will highlight when overing outside the button - right)
                     let mouse_rel_position = Mouse::position_relative(
                         self.position + glm::vec2(widget.rect.x, widget.rect.y),
                     );
