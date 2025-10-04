@@ -1,5 +1,7 @@
 
-# Game Engine (WIP) – Powered by SDL3::GPU
+# Game Engine (WIP) 
+
+A small 2D/3D Rust Game Framework, using few dependencies and simple code to maintain easy building and portability.
 
 ## A lightweight, experimental game engine focused on performance and minimal dependencies.
 
@@ -11,8 +13,8 @@
 - Hot-reloadable game DLLs for rapid iteration
 - Sprite batching to reduce draw calls
 - Multiple shader/material support
-- Custom immediate-mode GUI (WIP)
-- Custom global allocator (WIP)
+- Custom immediate-mode GUI
+- Custom bitmap global allocator (WIP)
 - Roadmap: Entity Component System (ECS) integration
 
 ![demo2](demo2.jpg)
