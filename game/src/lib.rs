@@ -1,7 +1,7 @@
 use common::{
     Device,
     game_memory::GameMemory,
-    graphics::{IDENTITY, batch::Batch, render_target::RenderTarget},
+    graphics::{IDENTITY, VEC_2_ZERO, batch::Batch, render_target::RenderTarget},
     input::{
         keyboard::{KEYBOARD, Keyboard},
         mouse::{MOUSE, Mouse},
@@ -105,7 +105,7 @@ pub extern "C" fn update_game(
     {
         let mouse_position: glm::Vec2 = Mouse::position();
         batch.push_matrix(unsafe { GAME_TO_SCREEN_PROJECTION });
-        batch.texture(game.game_target.color(), glm::vec2(0f32, 0f32));
+        batch.texture(game.game_target.color(), &VEC_2_ZERO);
         batch.pop_matrix();
         batch.circle(
             [mouse_position.x, mouse_position.y],

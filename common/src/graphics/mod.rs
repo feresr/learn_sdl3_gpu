@@ -21,4 +21,4 @@ pub const MAX_INDICES: u32 = MAX_VERTICES * 3 / 2;
 pub static IDENTITY: glm::Mat4 = glm::Mat4::new(
     1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
 );
-pub static VEC_2: glm::Vec2 = glm::Vec2::new(0f32, 0f32);
+pub static VEC_2_ZERO: glm::Vec2 = glm::Vec2::new(0f32, 0f32);

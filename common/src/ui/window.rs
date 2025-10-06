@@ -5,7 +5,10 @@ const DEBUG_LAYOUT: bool = false;
 use crate::{
     graphics::batch::Batch,
     input::mouse::Mouse,
-    ui::{utils::{Direction, MeasuredWidget}, widget::{Widget, BUTTON_HEIGHT}},
+    ui::{
+        utils::{Direction, MeasuredWidget},
+        widget::{BUTTON_HEIGHT, Widget},
+    },
     utils::font_atlas::FontAtlas,
 };
 
@@ -109,7 +112,7 @@ impl Window {
         self.widgets[self.widget_count] = MeasuredWidget {
             widget: widget,
             rect: FRect { x, y, w, h },
-        }; 
+        };
         self.widget_count += 1;
         clicked
     }
@@ -198,7 +201,7 @@ impl Window {
                 Widget::Texture(texture) => {
                     batch.texture(
                         texture.clone(),
-                        self.position + glm::vec2(widget.rect.x, widget.rect.y),
+                        &(self.position + glm::vec2(widget.rect.x, widget.rect.y)),
                     );
                 }
                 Widget::Subtexture(subtexture) => {

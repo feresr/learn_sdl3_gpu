@@ -10,6 +10,7 @@ pub use sdl3::gpu::TextureFormat;
 pub use sdl3::iostream::IOStream;
 pub use sdl3::keyboard::Keycode;
 pub use sdl3::rect::Point;
+pub use sdl3::render::FPoint;
 pub use sdl3::rect::Rect;
 pub use sdl3::render::FRect;
 extern crate nalgebra_glm as glm;

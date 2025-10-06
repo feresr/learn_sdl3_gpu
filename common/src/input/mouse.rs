@@ -124,6 +124,11 @@ impl Mouse {
         self.left.set(false);
         self.right.set(false);
     }
+
+    pub fn clear_wheel(&mut self) {
+        self.wheel.x = 0f32;
+        self.wheel.y = 0f32;
+    }
 }
 
 pub static mut MOUSE: *const Mouse = std::ptr::null_mut();

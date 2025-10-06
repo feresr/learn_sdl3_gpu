@@ -1,4 +1,4 @@
-use crate::{editor::Editor, materials, player::Player, room::{Room, World}, SCREEN_TO_GAME_PROJECTION};
+use crate::{SCREEN_TO_GAME_PROJECTION, editor::Editor, materials, player::Player, room::World};
 use common::{
     Device, Rect, TextureFormat,
     graphics::{
@@ -39,7 +39,7 @@ impl Game {
             game_target: offscreen_target,
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
-            editor: Default::default(),
+            editor: Editor::default(device.clone()),
             player: Player::new(device.clone()),
             world: World::new(),
             tile_atlas,

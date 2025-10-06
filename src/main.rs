@@ -59,6 +59,7 @@ fn main() {
         keyboard.clear_pressed();
         mouse.clear_position_delta();
         mouse.clear_button_pressed();
+        mouse.clear_wheel();
         for event in event_pump.poll_iter() {
             match event {
                 Event::Window {

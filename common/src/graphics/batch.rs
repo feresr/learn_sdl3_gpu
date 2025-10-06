@@ -70,7 +70,7 @@ impl Batch {
         if self.matrix_stack.is_empty() {
             self.matrix_stack.push(matrix);
         } else {
-            let current: &glm::Mat4 = self.matrix_stack.last().unwrap();
+            let current: &glm::Mat4 = self.peek_matrix();
             self.matrix_stack.push(current * matrix);
         }
     }
@@ -120,7 +120,7 @@ impl Batch {
     }
 
     // TODO: why is this taking a glm::2 as position (and not [f32;3])
-    pub fn texture(&mut self, texture: Texture, position: glm::Vec2) {
+    pub fn texture(&mut self, texture: Texture, position: &glm::Vec2) {
         let mut current_batch = self.current_batch();
 
         // Push a new batch if the current_batch already has a texture assigned.
@@ -369,10 +369,7 @@ impl Batch {
         wash: u8,
         fill: u8,
     ) {
-        if self.matrix_stack.is_empty() {
-            self.matrix_stack.push(IDENTITY);
-        }
-        let matrix: &glm::Mat4 = self.matrix_stack.last().unwrap();
+        let matrix: &glm::Mat4 = self.peek_matrix();
         let projected: glm::Vec3 =
             (matrix * glm::vec4(position[0], position[1], position[2], 1.0)).xyz();
         self.vertices.push(Vertex {

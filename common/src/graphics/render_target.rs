@@ -113,6 +113,13 @@ impl RenderTarget {
             .as_ref()
             .expect("Missing projection: Empty RenderTarget");
     }
+    
+    pub fn projection_mut(&mut self) -> &mut glm::Mat4 {
+        return self
+            .projection
+            .as_mut()
+            .expect("Missing projection: Empty RenderTarget");
+    }
 
     pub fn color_target_info(&self) -> ColorTargetInfo {
         let texture = match &self.texture {
