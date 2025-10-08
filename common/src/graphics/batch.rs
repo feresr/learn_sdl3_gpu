@@ -194,12 +194,120 @@ impl Batch {
     }
 
     pub fn rect(&mut self, position: [f32; 3], size: [f32; 2], color: [u8; 4]) {
+        // Top-left -> Top-right -> Bottom-left -> Bottom-right
         self.quad(
             position,
             [position[0] + size[0], position[1], position[2]],
             [position[0], position[1] + size[1], position[2]],
             [position[0] + size[0], position[1] + size[1], position[2]],
             color,
+        );
+    }
+
+    pub fn rect_outline(
+        &mut self,
+        position: [f32; 3],
+        size: [f32; 2],
+        color: [u8; 4],
+        thickness: f32,
+    ) {
+        let top_left = position;
+        let top_right = [position[0] + size[0], position[1], position[2]];
+        let bottom_left = [position[0], position[1] + size[1], position[2]];
+        let bottom_right = [position[0] + size[0], position[1] + size[1], position[2]];
+
+        // TOP edge
+        self.quad(
+            [ top_left[0] - thickness / 2f32,
+                top_left[1] - thickness / 2f32,
+                top_left[2],
+            ],
+            [
+                top_right[0] + thickness / 2f32,
+                top_right[1] - thickness / 2f32,
+                top_right[2],
+            ],
+            [
+                top_left[0] - thickness / 2f32,
+                top_left[1] + thickness / 2f32,
+                top_left[2],
+              ],
+            [
+                top_right[0] + thickness / 2f32,
+                top_right[1] + thickness / 2f32,
+                top_right[2],
+            ],
+            color,
+        );
+        // BOTTOM edge
+        self.quad(
+            [
+                bottom_left[0] - thickness / 2f32,
+                bottom_left[1] - thickness / 2f32,
+                bottom_left[2],
+            ],
+            [
+                bottom_right[0] + thickness / 2f32,
+                bottom_right[1] - thickness / 2f32,
+                bottom_right[2],
+            ],
+            [
+                bottom_left[0] - thickness / 2f32,
+                bottom_left[1] + thickness / 2f32,
+                bottom_left[2],
+              ],
+            [
+                bottom_right[0] + thickness / 2f32,
+                bottom_right[1] + thickness / 2f32,
+                bottom_right[2],
+            ],
+            color,
+        );
+        // LEFT edge
+        self.quad(
+            [ 
+                top_left[0] - thickness / 2f32,
+                top_left[1] - thickness / 2f32,
+                top_left[2],
+            ],
+            [
+                top_left[0] + thickness / 2f32,
+                top_left[1] - thickness / 2f32,
+                top_left[2],
+            ],
+            [
+                bottom_left[0] - thickness / 2f32,
+                bottom_left[1] + thickness / 2f32,
+                bottom_left[2],
+              ],
+            [
+                bottom_left[0] + thickness / 2f32,
+                bottom_left[1] + thickness / 2f32,
+                bottom_left[2],
+            ],
+            color,
+        );
+        // Right edge
+        self.quad(
+            [ 
+                top_right[0] - thickness / 2f32,
+                top_right[1] - thickness / 2f32,
+               top_right[2],
+            ],
+            [
+                top_right[0] + thickness / 2f32,
+                top_right[1] - thickness / 2f32,
+                top_right[2],
+            ],
+            [
+                bottom_right[0] - thickness / 2f32,
+                bottom_right[1] + thickness / 2f32,
+                bottom_right[2],
+              ],
+            [
+                bottom_right[0] + thickness / 2f32,
+                bottom_right[1] + thickness / 2f32,
+                bottom_right[2]], color
         );
     }
 

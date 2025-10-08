@@ -1,13 +1,14 @@
-use std::io::Write;
-
-use common::{IOStream, Rect, graphics::IDENTITY, utils::tile_atlas::TileAtlas};
+use common::{Rect, utils::tile_atlas::TileAtlas};
 
 use crate::grid::Grid;
 
 pub const TILE_SIZE: usize = 8;
 pub const COLUMNS: usize = 40;
-pub const ROWS: usize = 24;
+pub const ROWS: usize = 22;
 pub const TILE_COUNT: usize = (COLUMNS * ROWS) as usize;
+
+pub const ROOM_WIDTH: usize = 320;
+pub const ROOM_HEIGHT: usize = 176;
 
 // game
 // scene (main menu) or layer
@@ -19,52 +20,6 @@ pub const TILE_COUNT: usize = (COLUMNS * ROWS) as usize;
 //      entities (that should be removed when switching rooms)
 // player
 // entities (that survive room swap, bubble)
-
-const WORLD_BYTES: &[u8] =
-    include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/level");
-
-pub const WORLD_COLUMNS: usize = 4;
-pub const WORLD_ROWS: usize = 3;
-pub const ROOMS_IN_WORLD: usize = WORLD_COLUMNS * WORLD_ROWS;
-pub const ROOM_WIDTH: usize = 320;
-pub const ROOM_HEIGHT: usize = 180;
-pub struct World {
-    pub rooms: Grid<Room, ROOMS_IN_WORLD, ROOM_WIDTH, ROOM_HEIGHT, WORLD_COLUMNS, WORLD_ROWS>,
-}
-impl World {
-    pub fn new() -> Self {
-        World {
-            rooms: Grid {
-                inner: unsafe {
-                    std::ptr::read(WORLD_BYTES.as_ptr() as *const [Room; ROOMS_IN_WORLD])
-                },
-            },
-        }
-    }
-
-    pub(crate) fn render(&self, batch: &mut common::graphics::batch::Batch, atlas: &TileAtlas) {
-        for (x, y, room) in &self.rooms {
-            batch.push_matrix(glm::translate(
-                &IDENTITY,
-                &glm::vec3(x as f32 * 320.0, y as f32 * 180.0, 0f32),
-            ));
-            room.render(batch, atlas);
-            batch.pop_matrix()
-        }
-    }
-
-    pub fn save(&self) {
-        let path = "/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/level";
-        let mut io = IOStream::from_file(path, "wb").unwrap();
-        let bytes: &[u8] = unsafe {
-            std::slice::from_raw_parts(
-                self.rooms.inner.as_ptr() as *const u8,
-                std::mem::size_of_val(&self.rooms.inner),
-            )
-        };
-        io.write(bytes).unwrap();
-    }
-}
 
 pub struct Room {
     // TODO: pub background_tiles: Tiles,

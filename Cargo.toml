@@ -14,4 +14,4 @@ stb_image = "0.3.0"
 [dependencies]
 common = { path = "./common" }
 sdl3 = { workspace = true } 
-nalgebra-glm = {workspace = true} 
+nalgebra-glm = {workspace = true } 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use common::{
     Point, Rect,
-    graphics::{VEC_2, subtexture::Subtexture, texture::Texture},
+    graphics::{VEC_2_ZERO, subtexture::Subtexture, texture::Texture},
     ui::{gui::Gui, widget::Widget},
     utils::{
         animation::{Animation, Frame},
@@ -119,7 +119,7 @@ impl Sprite {
         let origin = glm::vec2(frame.pivot.x as f32, frame.pivot.y as f32);
         let transform = create_transform(position, origin, glm::vec2(self.scale_x, self.scale_y));
         batch.push_matrix(transform);
-        batch.subtexture(subtexture, VEC_2);
+        batch.subtexture(subtexture, VEC_2_ZERO);
         batch.pop_matrix();
     }
 }
