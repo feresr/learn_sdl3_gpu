@@ -117,6 +117,8 @@ impl Sprite {
 
         let position = glm::vec2(position.x as f32, position.y as f32);
         let origin = glm::vec2(frame.pivot.x as f32, frame.pivot.y as f32);
+
+        // TODO: consider keeping a global transform matrix in the Sprite (and use create_transform_inplace here)
         let transform = create_transform(position, origin, glm::vec2(self.scale_x, self.scale_y));
         batch.push_matrix(transform);
         batch.subtexture(subtexture, VEC_2_ZERO);

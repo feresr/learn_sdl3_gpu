@@ -1,11 +1,11 @@
-use crate::{SCREEN_TO_GAME_PROJECTION, editor::Editor, materials, player::Player, room::World};
+use crate::{SCREEN_TO_GAME_PROJECTION, materials, player::Player, world::World};
 use common::{
     Device, Rect, TextureFormat,
     graphics::{
         IDENTITY, batch::Batch, material::Material, render_target::RenderTarget, texture::Texture,
     },
     input::mouse::Mouse,
-    ui::{gui::Gui, widget::Widget},
+    ui::gui::Gui,
     utils::tile_atlas::TileAtlas,
 };
 
@@ -18,7 +18,6 @@ pub struct Game {
     pub gui: Gui,
     pub world: World,
     pub player: Player,
-    pub editor: Editor,
     pub tile_atlas: TileAtlas,
 }
 
@@ -39,7 +38,6 @@ impl Game {
             game_target: offscreen_target,
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
-            editor: Editor::default(device.clone()),
             player: Player::new(device.clone()),
             world: World::new(),
             tile_atlas,
@@ -62,27 +60,14 @@ impl Game {
             "AWSD to move, SPACE to attack".to_string(),
         ));
 
-        if self.editor.showing {
-            self.editor.update(&mut self.world, &self.tile_atlas);
-            return;
-        }
-
         let current_room = &mut self.world.rooms[0];
         current_room.update();
         self.player.update(&current_room);
-
-        if window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255])) {
-            self.editor.showing = true;
-        }
     }
 
     pub(crate) fn render(&self, batch: &mut Batch) {
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
         let current_room = &self.world.rooms[0];
-        if self.editor.showing {
-            self.editor.render(batch, &self.world, &self.tile_atlas);
-            return;
-        }
         current_room.render(batch, &self.tile_atlas);
 
         let game_mouse_position = &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
@@ -111,10 +96,13 @@ impl Game {
         }
 
         self.player.render(batch);
+
+        batch.draw_into(&self.game_target);
     }
 }
 
-pub fn game_to_screen_projection(
+// TODO: move this to lib, find better place for this
+pub fn create_target_projection(
     game_target: &RenderTarget,
     screen_target: &RenderTarget,
 ) -> glm::Mat4 {

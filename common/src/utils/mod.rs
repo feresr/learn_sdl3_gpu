@@ -20,6 +20,13 @@ where
     }
 }
 
+pub fn create_transform_inplace(mat: &mut glm::Mat4, position: glm::Vec2, origin: glm::Vec2, scale: glm::Vec2) {
+    mat.fill_with_identity();
+    mat.append_translation_mut(&glm::vec3(-origin.x, -origin.y, 0.0f32));
+    mat.append_nonuniform_scaling_mut(&glm::vec3(scale.x, scale.y, 1.0f32));
+    mat.append_translation_mut(&glm::vec3(position.x, position.y, 0.0f32));
+}
+
 pub fn create_transform(position: glm::Vec2, origin: glm::Vec2, scale: glm::Vec2) -> glm::Mat4 {
     return glm::translate(&IDENTITY, &glm::vec3(position.x, position.y, 0.0f32))
         * glm::scale(&IDENTITY, &glm::vec3(scale.x, scale.y, 1.0f32))
