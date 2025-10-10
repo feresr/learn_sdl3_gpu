@@ -1,5 +1,6 @@
 use common::{
-    FPoint, graphics::IDENTITY,
+    FPoint,
+    graphics::IDENTITY,
     input::{keyboard::Keyboard, mouse::Mouse},
     ui::{gui::Gui, utils::Direction, widget::Widget},
     utils::{create_transform_inplace, tile_atlas::TileAtlas},
@@ -13,7 +14,6 @@ use crate::{
 pub struct Editor {
     pub is_showing: bool,
     pub selected_tile: u16,
-    pub drawing: bool,
     offset: FPoint,
     // TODO: impl pinch to zoom (make this the same as aseprite controlls)
     zoom: f32,
@@ -25,7 +25,6 @@ impl Editor {
         Self {
             is_showing: false,
             selected_tile: 0,
-            drawing: false,
             offset: FPoint::new(0f32, 0f32),
             zoom: 1.0,
             projection: IDENTITY,
@@ -34,11 +33,6 @@ impl Editor {
 
     pub fn update(&mut self, world: &mut World, atlas: &TileAtlas) {
         self.draw_editor_controls(world, atlas);
-
-        if Mouse::left_clicked() {
-            // TODO: select tile and modify properties?
-            self.drawing = true;
-        }
 
         if Keyboard::pressed(common::Keycode::_1) {
             self.apply_zoom_and_pan(1.0);
@@ -61,37 +55,33 @@ impl Editor {
             self.apply_zoom_and_pan(self.zoom);
         }
 
-        if self.drawing {
+        if Mouse::left_held() {
             // (x,y) in game space (0,0) to (screen_w, screen_h)
             let screen_space_mouse = Mouse::position();
             // (x,y) in editor space (after zoom and pan)
             let editor_space_mouse = self.projection.try_inverse().unwrap()
                 * glm::vec4(screen_space_mouse.x, screen_space_mouse.y, 0f32, 1f32);
 
-            if Mouse::left_held() {
-                let mouse_x = editor_space_mouse.x as usize;
-                let mouse_y = editor_space_mouse.y as usize;
+            let mouse_x = editor_space_mouse.x as usize;
+            let mouse_y = editor_space_mouse.y as usize;
 
-                // Integer division to get the room index in the world grid
-                let room_index_x = mouse_x / ROOM_WIDTH;
-                let room_index_y = mouse_y / ROOM_HEIGHT;
+            // Integer division to get the room index in the world grid
+            let room_index_x = mouse_x / ROOM_WIDTH;
+            let room_index_y = mouse_y / ROOM_HEIGHT;
 
-                let room = world
-                    .rooms
-                    .get_cell_at_index_mut(room_index_x, room_index_y);
+            let room = world
+                .rooms
+                .get_cell_at_index_mut(room_index_x, room_index_y);
 
-                // X and Y with origin at this room top-left corner
-                let room_local_x = mouse_x - room_index_x * ROOM_WIDTH;
-                let room_local_y = mouse_y - room_index_y * ROOM_HEIGHT;
+            // X and Y with origin at this room top-left corner
+            let room_local_x = mouse_x - room_index_x * ROOM_WIDTH;
+            let room_local_y = mouse_y - room_index_y * ROOM_HEIGHT;
 
-                let tile = room
-                    .foreground_tiles
-                    .get_cell_at_position_mut(room_local_x, room_local_y);
-                tile.id = self.selected_tile as u8;
-                tile.visible = true;
-            } else {
-                self.drawing = false;
-            }
+            let tile = room
+                .foreground_tiles
+                .get_cell_at_position_mut(room_local_x, room_local_y);
+            tile.id = self.selected_tile as u8;
+            tile.visible = true;
         }
     }
 
@@ -104,7 +94,8 @@ impl Editor {
         let delta_y = screen_space_mouse.y - self.offset.y;
         self.offset.x += delta_x * (1.0 - zoom_ratio);
         self.offset.y += delta_y * (1.0 - zoom_ratio);
-        create_transform_inplace(&mut self.projection,
+        create_transform_inplace(
+            &mut self.projection,
             glm::vec2(self.offset.x, self.offset.y),
             glm::vec2(0.0f32, 0.0f32),
             glm::vec2(self.zoom, self.zoom),

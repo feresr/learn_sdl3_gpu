@@ -25,6 +25,7 @@ mod player;
 mod room;
 mod sprite;
 mod world;
+mod camera;
 
 // TODO: Custom allocator (allocate only on provided memory)
 // Use a bitmap allocator, represet each byte with a bit
@@ -90,6 +91,15 @@ pub extern "C" fn update_game(
             SCREEN_TO_GAME_PROJECTION = GAME_TO_SCREEN_PROJECTION.try_inverse().unwrap();
             WINDOW_SIZE.0 = screen_target.width;
             WINDOW_SIZE.1 = screen_target.height;
+        }
+    }
+
+    if Keyboard::pressed(common::Keycode::Escape) {
+        if editor.is_showing {
+            editor.is_showing = false;
+        } else {
+            game_memory.quit = true;
+            return;
         }
     }
 

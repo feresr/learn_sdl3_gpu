@@ -20,6 +20,9 @@ use common::graphics::render_target::RenderTarget;
 pub const FPS: u64 = 60;
 pub const FRAME_DURATION: Duration = Duration::from_nanos(1_000_000_000 / FPS);
 
+pub const SCREEN_WIDTH: u32 = 320 * 4;
+pub const SCREEN_HEIGHT: u32 = 180 * 4;
+
 fn main() {
     // Give us access to windowing and input events
     let sdl_context = sdl3::init().unwrap();
@@ -27,8 +30,8 @@ fn main() {
     // Windowing
     let video_subsystem = sdl_context.video().expect("Unable to get video subsystem");
     let window = video_subsystem
-        .window("Game", 320 * 4, 180 * 4)
-        .resizable()
+        .window("Game", SCREEN_WIDTH, SCREEN_HEIGHT)
+        // .resizable() // TODO: uniform scaling (int)
         .high_pixel_density()
         .position_centered()
         .build()
@@ -53,6 +56,7 @@ fn main() {
     let mut game_memory = GameMemory::default();
     let mut gamedll = GameDll::load();
     let mut screen_target = RenderTarget::empty();
+    screen_target.resize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     'running: loop {
         let start = Instant::now();
@@ -66,12 +70,8 @@ fn main() {
                     timestamp: _,
                     window_id: _,
                     win_event: WindowEvent::Resized(width, height),
-                } => screen_target.resize(width, height),
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
+                } => screen_target.resize(width as u32, height as u32),
+                Event::Quit { .. } => break 'running,
                 Event::KeyDown {
                     keycode: Some(Keycode::R),
                     ..
@@ -121,6 +121,10 @@ fn main() {
         screen_target.clear_texture();
 
         cmd.submit().unwrap();
+        
+        if game_memory.quit {
+            break 'running;
+        }
 
         precise_sleep(start);
     }

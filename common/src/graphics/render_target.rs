@@ -56,7 +56,7 @@ impl RenderTarget {
     pub fn set_texture(&mut self, texture: sdl3::gpu::Texture<'_>) {
         // Only sets the projection matrix once for performance
         if self.projection.is_none() {
-            self.resize(texture.width() as i32, texture.height() as i32)
+            self.resize(texture.width(), texture.height())
         }
 
         // Unsafe:
@@ -141,13 +141,13 @@ impl RenderTarget {
             .with_clear_color(clear_color)
     }
 
-    pub fn resize(&mut self, width: i32, height: i32) {
+    pub fn resize(&mut self, width: u32, height: u32) {
         if let BackingTexture::Texture(_) = self.texture {
             panic!("Trying to resize non BackingTexture::Screen Render target")
         }
         let projection = glm::ortho(0.0f32, width as f32, height as f32, 0.0f32, -1.0f32, 1.0f32);
-        self.width = width as u32;
-        self.height = height as u32;
+        self.width = width ;
+        self.height = height;
         self.projection = Some(projection);
     }
 }

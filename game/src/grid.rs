@@ -40,6 +40,11 @@ impl<
         let index_y = y / CELL_HEIGHT;
         &self.inner[index_x + (COLUMNS * index_y)]
     }
+    pub fn get_cell_index_at_position(&self, x: usize, y: usize) -> (usize, usize) {
+        let index_x = x / CELL_WIDTH;
+        let index_y = y / CELL_HEIGHT;
+        (index_x, index_y)
+    }
 }
 
 impl<

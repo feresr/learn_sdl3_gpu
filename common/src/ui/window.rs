@@ -29,6 +29,7 @@ pub struct Window {
     widgets: [MeasuredWidget; MAX_WIDGETS],
     widget_count: usize,
     direction: Direction,
+    expanded: bool,
 }
 
 impl Window {
@@ -47,17 +48,30 @@ impl Window {
             self.dragging = false;
         }
 
+        let mut focused = false;
+
         self.hovering_header = self.is_hovering_header(Mouse::position());
 
-        let mut focused = false;
-        if Mouse::left_clicked() {
-            self.dragging = self.hovering_header;
-            // Caputure this click (and store it in self.click for future handling)
-            if self.is_hovering_window(Mouse::position()) {
+        if self.hovering_header {
+            focused = true;
+            if Mouse::left_clicked() {
+                self.expanded = !self.expanded;
+            }
+            self.dragging = Mouse::left_held();
+            if Mouse::left_held() {
+                Mouse::consume_left();
+            }
+        }
+
+        if self.is_hovering_window(Mouse::position()) {
+            if Mouse::left_clicked() {
+                focused = true;
                 let mouse_position = Mouse::position_relative(self.position);
                 // Save this click for future handling (on add_widget(..))
                 self.click = Some((mouse_position.x, mouse_position.y));
-                // Prevent underlying content (game or another window) from interaacting
+                Mouse::consume_left();
+            }
+            if Mouse::left_held() {
                 focused = true;
                 Mouse::consume_left();
             }
@@ -121,12 +135,14 @@ impl Window {
         self.click = None;
 
         // Draw Background
-        const BACKGROUND_COLOR: [u8; 4] = [44, 44, 54, 255];
-        batch.rect(
-            [self.position.x, self.position.y, 0f32],
-            self.size.into(),
-            BACKGROUND_COLOR,
-        );
+        if self.expanded {
+            const BACKGROUND_COLOR: [u8; 4] = [44, 44, 54, 255];
+            batch.rect(
+                [self.position.x, self.position.y, 0f32],
+                self.size.into(),
+                BACKGROUND_COLOR,
+            );
+        }
 
         // Draw Header
         const HEADER_COLOR: [u8; 4] = [0, 0, 0, 255];
@@ -145,6 +161,9 @@ impl Window {
         // TODO: Investigate SDL text rendering capabilities instead of custom impl?
         self.draw_text(self.title, glm::vec2(PADDING, 6f32), batch, atlas);
 
+        if !self.expanded {
+            return;
+        }
         // Draw the rest of the widgets
         // TODO: move draw into each Widget?
         for widget_index in 0..self.widget_count {

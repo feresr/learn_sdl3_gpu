@@ -6,6 +6,7 @@ use sdl3::sys::stdinc::{SDL_free, SDL_malloc};
 pub struct GameMemory {
     pub initialized: bool,
     pub storage: *mut c_void,
+    pub quit: bool,
 }
 
 impl GameMemory {
@@ -23,6 +24,7 @@ impl GameMemory {
         Self {
             initialized: false,
             storage,
+            quit: false,
         }
     }
 }

@@ -25,17 +25,16 @@ impl Keyboard {
     // ---- Methods below are meant to be invoked by the runtime
 
     /**  
-     * This will be invoked multiple times if the user holds the key down
-     * On the first iteration we set pressed = !held and held = true
-     * Resulting in pressed = true, held = true on the first pass
-     * and pressed = false, held = true in subsequent passes.
+     * Pressed keys get released on every frame (one time actions).
+     * Held keys get held down until they are released explicitly.
+     * Use 'held' for actions like movement.
+     * Use 'pressed' for actions like jump.
      */
     pub fn press(&mut self, key: Keycode) {
-        if self.pressed_keys.contains(&key) {
-            self.pressed_keys.remove(&key);
-        } else {
-            self.pressed_keys.insert(key);
+        if self.held_keys.contains(&key) {
+            return;
         }
+        self.pressed_keys.insert(key);
         self.held_keys.insert(key);
     }
 
