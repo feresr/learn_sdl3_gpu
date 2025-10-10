@@ -22,9 +22,9 @@ pub const ROOM_HEIGHT: usize = 176;
 // entities (that survive room swap, bubble)
 
 pub struct Room {
-    // TODO: pub background_tiles: Tiles,
     pub position_in_world: Point,
     pub foreground_tiles: Grid<Tile, TILE_COUNT, TILE_SIZE, TILE_SIZE, COLUMNS, ROWS>,
+    pub background_tiles: Grid<Tile, TILE_COUNT, TILE_SIZE, TILE_SIZE, COLUMNS, ROWS>,
 }
 
 impl Room {
@@ -36,11 +36,26 @@ impl Room {
             foreground_tiles: Grid {
                 inner: [Tile::default(); TILE_COUNT],
             },
+            background_tiles: Grid {
+                inner: [Tile::default(); TILE_COUNT],
+            },
         }
     }
 
     pub(crate) fn render(&self, batch: &mut common::graphics::batch::Batch, atlas: &TileAtlas) {
         let mut tile_position = glm::vec2(0f32, 0f32);
+        for (x, y, tile) in &self.background_tiles {
+            if !tile.visible {
+                continue;
+            }
+            let sprite = atlas.get_at_index(tile.id.into());
+            tile_position.x = self.position_in_world.x as f32;
+            tile_position.y = self.position_in_world.y as f32;
+            tile_position.x += x as f32 * TILE_SIZE as f32;
+            tile_position.y += y as f32 * TILE_SIZE as f32;
+            batch.subtexture_color(sprite, tile_position, [110, 110, 110, 255]);
+        }
+
         for (x, y, tile) in &self.foreground_tiles {
             if !tile.visible {
                 continue;

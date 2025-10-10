@@ -69,5 +69,6 @@ impl World {
             )
         };
         io.write(bytes).unwrap();
+        dbg!("Room saved!");
     }
 }

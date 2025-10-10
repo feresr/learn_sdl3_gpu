@@ -159,6 +159,10 @@ impl Batch {
     }
 
     pub fn subtexture(&mut self, subtexture: Subtexture, position: glm::Vec2) {
+        self.subtexture_color(subtexture, position, [255, 255, 255, 255]);
+    }
+
+    pub fn subtexture_color(&mut self, subtexture: Subtexture, position: glm::Vec2, color: [u8; 4]) {
         let mut current_batch = self.current_batch();
         if let Some(batch_texture) = current_batch.texture.as_ref() {
             if batch_texture != &subtexture.texture {
@@ -189,8 +193,9 @@ impl Batch {
             255,
             0,
             0,
-            [255, 255, 255, 255],
+            color,
         );
+
     }
 
     pub fn rect(&mut self, position: [f32; 3], size: [f32; 2], color: [u8; 4]) {

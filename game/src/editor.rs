@@ -11,6 +11,12 @@ use crate::{
     world::World,
 };
 
+#[derive(Debug)]
+enum Layer {
+    Background,
+    Foreground,
+}
+
 pub struct Editor {
     pub is_showing: bool,
     pub selected_tile: u16,
@@ -18,6 +24,7 @@ pub struct Editor {
     // TODO: impl pinch to zoom (make this the same as aseprite controlls)
     zoom: f32,
     projection: glm::Mat4,
+    layer: Layer,
 }
 
 impl Editor {
@@ -28,6 +35,7 @@ impl Editor {
             offset: FPoint::new(0f32, 0f32),
             zoom: 1.0,
             projection: IDENTITY,
+            layer: Layer::Foreground,
         }
     }
 
@@ -77,9 +85,11 @@ impl Editor {
             let room_local_x = mouse_x - room_index_x * ROOM_WIDTH;
             let room_local_y = mouse_y - room_index_y * ROOM_HEIGHT;
 
-            let tile = room
-                .foreground_tiles
-                .get_cell_at_position_mut(room_local_x, room_local_y);
+            let tiles = match self.layer {
+                Layer::Foreground => &mut room.foreground_tiles,
+                Layer::Background => &mut room.background_tiles,
+            };
+            let tile = tiles.get_cell_at_position_mut(room_local_x, room_local_y);
             tile.id = self.selected_tile as u8;
             tile.visible = true;
         }
@@ -150,5 +160,14 @@ impl Editor {
         if window.add_widget(Widget::Button("Close", [120, 32, 23, 255])) {
             self.is_showing = false;
         }
+
+        window.set_direction(Direction::Vertical);
+        if window.add_widget(Widget::Button("Toggle", [0, 0, 32, 255])) {
+            match self.layer {
+                Layer::Background => self.layer = Layer::Foreground,
+                Layer::Foreground => self.layer = Layer::Background,
+            }
+        }
+        window.add_widget(Widget::Text(format!("Drawing in {:?} layer", self.layer)));
     }
 }

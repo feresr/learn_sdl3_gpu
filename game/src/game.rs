@@ -48,8 +48,7 @@ impl Game {
     }
 
     pub(crate) fn update(&mut self) {
-        let game_mouse_position = Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
-
+        let game_mouse_position = self.game_mouse_position();
         let window = Gui::window("Game");
         window.set_direction(common::ui::utils::Direction::Vertical);
         window.add_widget(common::ui::widget::Widget::Text(format!(
@@ -89,8 +88,7 @@ impl Game {
             .rooms
             .get_cell_at_position(player_position.x as usize, player_position.y as usize);
 
-        let game_mouse_position = &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
-
+        let game_mouse_position = self.game_mouse_position();
         let mut rect = Rect::new(
             game_mouse_position.x as i32,
             game_mouse_position.y as i32,
@@ -118,6 +116,10 @@ impl Game {
         self.player.render(batch);
         batch.draw_into(&self.game_target);
         batch.clear();
+    }
+
+    fn game_mouse_position(&self) -> glm::Vec2 {
+        Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION }) + self.camera.position()
     }
 }
 

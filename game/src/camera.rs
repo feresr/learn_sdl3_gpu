@@ -14,6 +14,10 @@ impl Default for Camera {
 }
 
 impl Camera {
+    pub fn position(&self) -> glm::Vec2 {
+        glm::vec2(self.viewport.x as f32, self.viewport.y as f32)
+    }
+
     pub fn update(&mut self, target: &mut RenderTarget, player: &Player, world: &World) {
         // Find the current room the player is in.
         let position = player.get_position();
