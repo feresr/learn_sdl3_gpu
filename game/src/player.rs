@@ -72,6 +72,10 @@ impl Player {
         }
     }
 
+    pub fn get_position(&self) -> Point {
+        self.position
+    }
+
     pub fn update(&mut self, room: &Room) {
         self.sprite.update();
 

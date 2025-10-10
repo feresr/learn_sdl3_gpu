@@ -1,41 +1,45 @@
-use common::{graphics::IDENTITY, utils::create_transform_inplace, Point};
+use common::{Point, Rect, graphics::render_target::RenderTarget};
 
-use crate::room::Room;
+use crate::{player::Player, world::World};
 
 pub struct Camera {
-    projection: glm::Mat4,
-    current_position : Point,
+    viewport: Rect,
 }
 
 impl Default for Camera {
     fn default() -> Self {
-        Self {
-            projection: IDENTITY,
-            current_position: Point::new(0, 0),
-        }
+        let rect = Rect::new(0, 0, 320, 180);
+        Self { viewport: rect }
     }
 }
 
 impl Camera {
-
-    pub fn projection(&self) -> &glm::Mat4 {
-        &self.projection
-    }
-
-    pub fn update(&mut self, current_room: &Room) {
-        if self.current_position == current_room.position_in_world {
+    pub fn update(&mut self, target: &mut RenderTarget, player: &Player, world: &World) {
+        // Find the current room the player is in.
+        let position = player.get_position();
+        let current_room = world.rooms.get_cell_at_position(
+            position.x as usize,
+            (position.y + 4) as usize, // TODO 4 is the offset between Romo size and scren size
+        );
+        // Check if we need to move the camera
+        if self.viewport.x == current_room.position_in_world.x
+            && self.viewport.y == current_room.position_in_world.y
+        {
             return;
         }
-        self.current_position = current_room.position_in_world;
-        self.projection.fill_with_identity();
-        create_transform_inplace(
-            &mut self.projection,
-            glm::vec2(
-                -current_room.position_in_world.x as f32,
-                -current_room.position_in_world.y as f32,
-            ),
-            glm::vec2(0f32, 0f32),
-            glm::vec2(1f32, 1f32),
+        // If so, reposition the camera and update projection
+        let top_left = Point::new(
+            current_room.position_in_world.x as i32,
+            current_room.position_in_world.y as i32,
+        );
+        self.viewport.reposition(top_left);
+        *target.projection_mut() = glm::ortho(
+            self.viewport.left() as f32,
+            self.viewport.right() as f32,
+            self.viewport.bottom() as f32,
+            self.viewport.top() as f32,
+            -1f32,
+            1f32,
         );
     }
 }

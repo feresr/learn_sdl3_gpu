@@ -1,4 +1,4 @@
-use crate::{SCREEN_TO_GAME_PROJECTION, materials, player::Player, world::World};
+use crate::{SCREEN_TO_GAME_PROJECTION, camera::Camera, materials, player::Player, world::World};
 use common::{
     Device, Rect, TextureFormat,
     graphics::{
@@ -12,6 +12,7 @@ use common::{
 static ATLAS: &[u8] =
     include_bytes!("/Users/feresr/Workspace/learn_sdl3_gpu/game/assets/atlas.png");
 
+#[allow(dead_code)] // TODO: remove dead code
 pub struct Game {
     pub material: Material,
     pub game_target: RenderTarget,
@@ -19,6 +20,7 @@ pub struct Game {
     pub world: World,
     pub player: Player,
     pub tile_atlas: TileAtlas,
+    pub camera: Camera,
 }
 
 impl Game {
@@ -39,8 +41,9 @@ impl Game {
             gui: Gui::new(device.clone()),
             // arena: Default::default(),
             player: Player::new(device.clone()),
-            world: World::new(),
+            world: World::from_bytes(),
             tile_atlas,
+            camera: Camera::default(),
         }
     }
 
@@ -48,11 +51,15 @@ impl Game {
         let game_mouse_position = Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
 
         let window = Gui::window("Game");
+        window.set_direction(common::ui::utils::Direction::Vertical);
         window.add_widget(common::ui::widget::Widget::Text(format!(
             "Mouse game position: x:{} y:{}",
             game_mouse_position.x.floor(),
             game_mouse_position.y.floor()
         )));
+        window.add_widget(common::ui::widget::Widget::Text(
+            "Press 'E' to to enter the map editor.".to_string(),
+        ));
         window.add_widget(common::ui::widget::Widget::Text(
             "Press 'R' to hot-reload the game dll.".to_string(),
         ));
@@ -60,15 +67,27 @@ impl Game {
             "AWSD to move, SPACE to attack".to_string(),
         ));
 
-        let current_room = &mut self.world.rooms[0];
-        current_room.update();
+        let player_position = self.player.get_position();
+        // TODO extract fn to get current room logic into its own funciton (it's being invoked inside Camera too)
+        let current_room = self.world.rooms.get_cell_at_position(
+            player_position.x as usize,
+            (player_position.y + 4) as usize, // TODO 4 is the offset between Romo size and scren size
+        );
+
         self.player.update(&current_room);
+
+        // Follow player (it might have changed room after update(), so we need to re fetch current_room)
+        self.camera
+            .update(&mut self.game_target, &self.player, &self.world);
     }
 
     pub(crate) fn render(&self, batch: &mut Batch) {
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
-        let current_room = &self.world.rooms[0];
-        current_room.render(batch, &self.tile_atlas);
+        let player_position = self.player.get_position();
+        let current_room = self
+            .world
+            .rooms
+            .get_cell_at_position(player_position.x as usize, player_position.y as usize);
 
         let game_mouse_position = &Mouse::position_projected(&unsafe { SCREEN_TO_GAME_PROJECTION });
 
@@ -95,9 +114,10 @@ impl Game {
             );
         }
 
+        current_room.render(batch, &self.tile_atlas);
         self.player.render(batch);
-
         batch.draw_into(&self.game_target);
+        batch.clear();
     }
 }
 

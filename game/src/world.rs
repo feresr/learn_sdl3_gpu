@@ -28,6 +28,8 @@ impl World {
         }
     }
 
+    // TODO: remove dead code
+    #[allow(dead_code)]
     pub fn blank() -> Self {
         World {
             rooms: Grid {
