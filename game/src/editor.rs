@@ -8,7 +8,7 @@ use common::{
 
 use crate::{
     room::{ROOM_HEIGHT, ROOM_WIDTH, TILE_SIZE},
-    world::World,
+    world::{World, WORLD_COLUMNS, WORLD_ROWS},
 };
 
 #[derive(Debug)]
@@ -87,16 +87,16 @@ impl Editor {
 
         if Mouse::left_held() {
             // Integer division to get the room index in the world grid
-            let room_index_x = mouse_x / ROOM_WIDTH;
-            let room_index_y = mouse_y / ROOM_HEIGHT;
+            let room_index_x = (mouse_x / ROOM_WIDTH).clamp(0, WORLD_COLUMNS - 1);
+            let room_index_y = (mouse_y / ROOM_HEIGHT).clamp(0, WORLD_ROWS - 1);
 
             let room = world
                 .rooms
                 .get_cell_at_index_mut(room_index_x, room_index_y);
 
             // X and Y with origin at this room top-left corner
-            let room_local_x = mouse_x - room_index_x * ROOM_WIDTH;
-            let room_local_y = mouse_y - room_index_y * ROOM_HEIGHT;
+            let room_local_x = (mouse_x - room_index_x * ROOM_WIDTH).clamp(0, ROOM_WIDTH - 1);
+            let room_local_y= (mouse_y - room_index_y * ROOM_HEIGHT).clamp(0, ROOM_HEIGHT - 1);
 
             let tiles = match self.layer {
                 Layer::Foreground => &mut room.foreground_tiles,
@@ -141,6 +141,7 @@ impl Editor {
         batch.pop_matrix();
     }
 
+    // TODO: allow removing tiles
     fn draw_editor_controls(&mut self, world: &mut World, atlas: &TileAtlas) {
         let window = Gui::window("Map Editor");
         let mut index = 0;
@@ -187,5 +188,6 @@ impl Editor {
             }
         }
         window.add_widget(Widget::Text(format!("Drawing in {:?} layer", self.layer)));
+        window.add_widget(Widget::Text("Press 1,2,3,4 to modify zoom level".to_string()));
     }
 }

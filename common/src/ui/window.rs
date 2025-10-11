@@ -145,8 +145,8 @@ impl Window {
         }
 
         // Draw Header
-        const HEADER_COLOR: [u8; 4] = [0, 0, 0, 255];
-        const HEADER_COLOR_HOVER: [u8; 4] = [64, 64, 64, 255];
+        const HEADER_COLOR: [u8; 4] = [42, 0, 183, 255];
+        const HEADER_COLOR_HOVER: [u8; 4] = [64, 64, 200, 255];
         let header_color = if self.hovering_header {
             HEADER_COLOR_HOVER
         } else {

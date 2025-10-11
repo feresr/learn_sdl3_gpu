@@ -62,7 +62,7 @@ impl Player {
         let texture = Texture::from_bytes(device, PLAYER_PNG);
 
         Self {
-            position: Point::new(0, 0),
+            position: Point::new(32, 32),
             mover: Default::default(),
             collider: Rect::new(0, 0, 8, 8),
             pivot: Point::new(-4, -8),
