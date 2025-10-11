@@ -1,5 +1,5 @@
 use common::{
-    FPoint,
+    FPoint, FRect,
     graphics::IDENTITY,
     input::{keyboard::Keyboard, mouse::Mouse},
     ui::{gui::Gui, utils::Direction, widget::Widget},
@@ -7,7 +7,7 @@ use common::{
 };
 
 use crate::{
-    room::{ROOM_HEIGHT, ROOM_WIDTH},
+    room::{ROOM_HEIGHT, ROOM_WIDTH, TILE_SIZE},
     world::World,
 };
 
@@ -25,6 +25,7 @@ pub struct Editor {
     zoom: f32,
     projection: glm::Mat4,
     layer: Layer,
+    mouse_cursor: FRect,
 }
 
 impl Editor {
@@ -36,6 +37,12 @@ impl Editor {
             zoom: 1.0,
             projection: IDENTITY,
             layer: Layer::Foreground,
+            mouse_cursor: FRect {
+                x: 0f32,
+                y: 0f32,
+                w: TILE_SIZE as f32,
+                h: TILE_SIZE as f32,
+            },
         }
     }
 
@@ -63,16 +70,22 @@ impl Editor {
             self.apply_zoom_and_pan(self.zoom);
         }
 
+        // (x,y) in game space (0,0) to (screen_w, screen_h)
+        let screen_space_mouse = Mouse::position();
+        // (x,y) in editor space (after zoom and pan)
+        let editor_space_mouse = self.projection.try_inverse().unwrap()
+            * glm::vec4(screen_space_mouse.x, screen_space_mouse.y, 0f32, 1f32);
+
+        let mouse_x = editor_space_mouse.x as usize;
+        let mouse_y = editor_space_mouse.y as usize;
+
+        // Highlight currently hovering tile with cursors 
+        let world_tile_index_x = (mouse_x / TILE_SIZE) * TILE_SIZE;
+        let world_tile_index_y = (mouse_y / TILE_SIZE) * TILE_SIZE;
+        self.mouse_cursor.x = world_tile_index_x as f32;
+        self.mouse_cursor.y = world_tile_index_y as f32;
+
         if Mouse::left_held() {
-            // (x,y) in game space (0,0) to (screen_w, screen_h)
-            let screen_space_mouse = Mouse::position();
-            // (x,y) in editor space (after zoom and pan)
-            let editor_space_mouse = self.projection.try_inverse().unwrap()
-                * glm::vec4(screen_space_mouse.x, screen_space_mouse.y, 0f32, 1f32);
-
-            let mouse_x = editor_space_mouse.x as usize;
-            let mouse_y = editor_space_mouse.y as usize;
-
             // Integer division to get the room index in the world grid
             let room_index_x = mouse_x / ROOM_WIDTH;
             let room_index_y = mouse_y / ROOM_HEIGHT;
@@ -118,9 +131,13 @@ impl Editor {
         world: &World,
         atlas: &TileAtlas,
     ) {
-        // Draw transparent square on selected tile (or four 90 angles)
         batch.push_matrix(self.projection);
         world.render(batch, atlas);
+        batch.rect(
+            [self.mouse_cursor.x, self.mouse_cursor.y, 0f32],
+            [self.mouse_cursor.w, self.mouse_cursor.h],
+            [255, 255, 255, 50],
+        );
         batch.pop_matrix();
     }
 

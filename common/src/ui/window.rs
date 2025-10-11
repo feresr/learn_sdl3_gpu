@@ -63,7 +63,7 @@ impl Window {
             }
         }
 
-        if self.is_hovering_window(Mouse::position()) {
+        if self.is_hovering_window(Mouse::position()) && self.expanded {
             if Mouse::left_clicked() {
                 focused = true;
                 let mouse_position = Mouse::position_relative(self.position);
