@@ -120,6 +120,7 @@ pub extern "C" fn update_game(
         window.add_widget(Widget::Texture(game.game_target.color()));
         // window.add_widget(Widget::Texture(game.editor.editor_target.color()));
         window.add_widget(Widget::Text(format!("Draw calls: {}", draw_count)));
+        batch.clear();
 
         if Keyboard::pressed(common::Keycode::E)
             || window.add_widget(Widget::Button("Edit Room", [20, 132, 23, 255]))

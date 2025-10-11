@@ -115,6 +115,7 @@ impl Player {
         self.collider.reposition(self.position + self.pivot);
         // Calculate the integer and reminder speed to move
         let mut to_move = self.mover.get_integer_move_amount();
+        let original_speed = self.mover.speed;
 
         let signum_y = to_move.y.signum();
         while to_move.y.abs() > 0 {
@@ -161,8 +162,11 @@ impl Player {
         self.grounded = room.collides(&ground_check_collider);
         if !was_grounded && self.grounded {
             // Just landed
-            self.sprite.scale_x = 1.8f32;
-            self.sprite.scale_y = 0.5f32;
+            dbg!(original_speed.y);
+            if original_speed.y > 5.0f32 {
+                self.sprite.scale_x = 1.8f32;
+                self.sprite.scale_y = 0.5f32;
+            }
         }
 
         // Apply Gravity

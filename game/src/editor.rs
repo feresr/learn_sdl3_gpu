@@ -118,6 +118,7 @@ impl Editor {
         world: &World,
         atlas: &TileAtlas,
     ) {
+        // Draw transparent square on selected tile (or four 90 angles)
         batch.push_matrix(self.projection);
         world.render(batch, atlas);
         batch.pop_matrix();

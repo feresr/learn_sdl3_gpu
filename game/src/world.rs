@@ -16,6 +16,7 @@ pub const WORLD_ROWS: usize = 3;
 pub const ROOMS_IN_WORLD: usize = WORLD_COLUMNS * WORLD_ROWS;
 pub struct World {
     pub rooms: Grid<Room, ROOMS_IN_WORLD, ROOM_WIDTH, ROOM_HEIGHT, WORLD_COLUMNS, WORLD_ROWS>,
+    // TODO: pub giant texture? Yes do the simplest thing first :D
 }
 impl World {
     pub fn from_bytes() -> Self {

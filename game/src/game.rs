@@ -83,10 +83,10 @@ impl Game {
     pub(crate) fn render(&self, batch: &mut Batch) {
         // Draw foreground tiles (TODO: Render to an offscreen target only once - composite target)
         let player_position = self.player.get_position();
-        let current_room = self
-            .world
-            .rooms
-            .get_cell_at_position(player_position.x as usize, player_position.y as usize);
+        let current_room = self.world.rooms.get_cell_at_position(
+            player_position.x as usize,
+            (player_position.y + 4) as usize, // TODO 4 is the offset between Romo size and scren size
+        );
 
         let game_mouse_position = self.game_mouse_position();
         let mut rect = Rect::new(
@@ -115,7 +115,6 @@ impl Game {
         current_room.render(batch, &self.tile_atlas);
         self.player.render(batch);
         batch.draw_into(&self.game_target);
-        batch.clear();
     }
 
     fn game_mouse_position(&self) -> glm::Vec2 {
